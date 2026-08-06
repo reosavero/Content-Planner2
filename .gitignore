@@ -1,0 +1,59 @@
+# ============================================================
+#  Content Planner — .gitignore
+#  WARNING: Repo ini PUBLIC. File di bawah JANGAN PERNAH di-push.
+# ============================================================
+
+# ---------- Environment ----------
+.env
+.env.*
+!.env.example
+
+# ---------- Kredensial & rahasia (kritis!) ----------
+# Google Service Account — berisi PRIVATE KEY (akses penuh ke Google Drive)
+config/tvri-planner-drive-30777d433daa.json
+config/*service_account*.json
+config/*-30777d433daa.json
+# Token OAuth Google Drive (refresh token)
+config/google-drive-oauth.json
+config/google_drive_token.json
+# Config dengan secret asli (SMTP app password, OAuth client secret, TikTok key).
+# Gunakan config/app.example.php & config/social.example.php sebagai template.
+config/app.php
+config/social.php
+
+# ---------- Log runtime (bisa berisi token/data) ----------
+logs/*
+!logs/.gitkeep
+
+# ---------- Upload pengguna (konten internal) ----------
+uploads/*
+!uploads/.htaccess
+
+# ---------- Backup & dump database (data pribadi) ----------
+database/backups/*
+!database/backups/.gitkeep
+database/db_lengkap.sql
+database/*.sql.bak
+database/*.sql.gz
+database/*.zip
+
+# ---------- Data internal ----------
+TIMELINE JULI 2026.xlsx
+
+# ---------- File sementara Windows ----------
+~$*.xlsx
+~$*
+nul
+
+# ---------- Editor & OS ----------
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---------- PHP runtime ----------
+*.log
+error_log
