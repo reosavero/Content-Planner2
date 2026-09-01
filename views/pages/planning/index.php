@@ -333,6 +333,9 @@ $kategoris = $kategoris ?? [];
         pointer-events: none;
         box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         border: 1px solid rgba(255,255,255,0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
     .task-status-badge.status-belum {
         background: #fee2e2;
@@ -373,6 +376,71 @@ $kategoris = $kategoris ?? [];
         background: #f3f4f6;
         color: #4b5563;
         border-color: #d1d5db;
+    }
+
+    /* Dark mode: warna kartu mengikuti status */
+    [data-theme="dark"] .task-card.status-approved,
+    [data-theme="dark"] .task-card.status-schedule,
+    [data-theme="dark"] .task-card.status-selesai {
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-color: rgba(16, 185, 129, 0.35) !important;
+    }
+    [data-theme="dark"] .task-card.status-menunggu {
+        background: rgba(245, 158, 11, 0.12) !important;
+        border-color: rgba(245, 158, 11, 0.35) !important;
+    }
+    [data-theme="dark"] .task-card.status-belum {
+        background: rgba(220, 38, 38, 0.12) !important;
+        border-color: rgba(220, 38, 38, 0.35) !important;
+    }
+    [data-theme="dark"] .task-card.status-belum-selesai {
+        background: var(--surface-hover) !important;
+        border-color: var(--border) !important;
+    }
+
+    /* Dark mode: badge status -> tint gelap (bukan chip terang) */
+    [data-theme="dark"] .task-card .task-status-badge.status-belum,
+    [data-theme="dark"] .task-card .task-status-badge.status-proses,
+    [data-theme="dark"] .task-card .task-status-badge.status-revisi {
+        background: rgba(220, 38, 38, 0.15) !important;
+        color: #fca5a5 !important;
+        border-color: rgba(220, 38, 38, 0.4) !important;
+    }
+    [data-theme="dark"] .task-card .task-status-badge.status-menunggu {
+        background: rgba(245, 158, 11, 0.15) !important;
+        color: #fcd34d !important;
+        border-color: rgba(245, 158, 11, 0.4) !important;
+    }
+    [data-theme="dark"] .task-card .task-status-badge.status-approved,
+    [data-theme="dark"] .task-card .task-status-badge.status-selesai {
+        background: rgba(16, 185, 129, 0.15) !important;
+        color: #34d399 !important;
+        border-color: rgba(16, 185, 129, 0.4) !important;
+    }
+    [data-theme="dark"] .task-card .task-status-badge.status-schedule {
+        background: rgba(59, 130, 246, 0.15) !important;
+        color: #93c5fd !important;
+        border-color: rgba(59, 130, 246, 0.4) !important;
+    }
+    [data-theme="dark"] .task-card .task-status-badge.status-belum-selesai {
+        background: var(--surface-hover) !important;
+        color: var(--text-secondary) !important;
+        border-color: var(--border) !important;
+    }
+    /* Dark mode: border kartu tetap warna status saat hover (bukan biru terang) */
+    [data-theme="dark"] .task-card.status-approved:hover,
+    [data-theme="dark"] .task-card.status-schedule:hover,
+    [data-theme="dark"] .task-card.status-selesai:hover {
+        border-color: rgba(16, 185, 129, 0.5) !important;
+    }
+    [data-theme="dark"] .task-card.status-menunggu:hover {
+        border-color: rgba(245, 158, 11, 0.5) !important;
+    }
+    [data-theme="dark"] .task-card.status-belum:hover {
+        border-color: rgba(220, 38, 38, 0.5) !important;
+    }
+    [data-theme="dark"] .task-card.status-belum-selesai:hover {
+        border-color: var(--border) !important;
     }
 
 
@@ -508,10 +576,23 @@ $kategoris = $kategoris ?? [];
     }
 
     .input-group-date {
-        display: flex;
-        align-items: stretch;
-        width: 100%;
+        display: flex !important;
+        align-items: stretch !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
         position: relative;
+    }
+
+    .input-group-date input[type="hidden"],
+    .input-group-date input[style*="display: none"],
+    .input-group-date input[style*="display:none"] {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
     }
 
     .input-group-date.calendar-open {
@@ -524,12 +605,13 @@ $kategoris = $kategoris ?? [];
     .input-group-date .form-control,
     .input-group-date input.flatpickr-input,
     .input-group-date input.flatpickr-alt-input {
-        border-radius: 12px 0 0 12px !important;
+        border-radius: 8px 0 0 8px !important;
         border-right: none !important;
-        flex: 1 !important;
+        flex: 1 1 0% !important;
         min-width: 0 !important;
-        width: auto !important;
-        max-width: none !important;
+        width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     .input-group-date input.flatpickr-alt-input.form-control {
         border-right: none !important;
@@ -551,7 +633,8 @@ $kategoris = $kategoris ?? [];
         align-items: center;
         justify-content: center;
         transition: all 0.2s ease;
-        flex-shrink: 0;
+        flex: 0 0 auto !important;
+        box-sizing: border-box !important;
     }
     .input-group-date .btn-date-icon:hover {
         background: #f1f5f9;
@@ -560,7 +643,7 @@ $kategoris = $kategoris ?? [];
 
     .input-group-date.input-focused {
         box-shadow: 0 0 0 3px rgba(0, 51, 153, 0.15);
-        border-radius: 12px;
+        border-radius: 8px;
     }
     .input-group-date.input-focused .btn-date-icon,
     .input-group-date.input-focused .btn-date-toggle {
@@ -571,18 +654,19 @@ $kategoris = $kategoris ?? [];
         box-shadow: none !important;
     }
     .input-group-date .btn-date-toggle {
-        border-radius: 0 12px 12px 0;
+        border-radius: 0 8px 8px 0;
         border: 1px solid var(--border, #cbd5e1);
         border-left: none;
         background: var(--surface, #ffffff);
         cursor: pointer;
-        padding: 0 12px;
+        padding: 0 10px;
         color: #003399;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s ease;
-        flex-shrink: 0;
+        flex: 0 0 auto !important;
+        box-sizing: border-box !important;
         font-size: 18px;
     }
     .input-group-date .btn-date-toggle:hover {
@@ -759,6 +843,31 @@ $kategoris = $kategoris ?? [];
         transform: translateY(-1px);
         box-shadow: 0 4px 10px rgba(126,34,206,0.18);
     }
+
+    /* ---------- Dark mode: modal Tambah Task (section + pill format) ---------- */
+    [data-theme="dark"] #modalTask .p-3.rounded-lg {
+        background: var(--surface-secondary) !important;
+        border-color: var(--border) !important;
+    }
+    [data-theme="dark"] #modalTask .multi-format-container {
+        background: var(--surface-tertiary) !important;
+        border-color: var(--border) !important;
+    }
+    [data-theme="dark"] .format-pill-btn {
+        background: var(--surface-secondary) !important;
+        border-color: var(--border) !important;
+        color: var(--text-primary) !important;
+    }
+    [data-theme="dark"] .format-pill-btn:hover {
+        background: var(--surface-hover) !important;
+        border-color: var(--border-focus) !important;
+    }
+    [data-theme="dark"] .format-pill-btn.selected {
+        background: linear-gradient(135deg, #1e3a8a 0%, #2f54eb 100%) !important;
+        border-color: #2f54eb !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(47, 84, 235, 0.35) !important;
+    }
     </style>
 
     <?php
@@ -779,36 +888,35 @@ $kategoris = $kategoris ?? [];
 
 
     <div class="timeline-header">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; width: 100%;">
             <div>
                 <h3 style="margin: 0; font-size: 22px; font-weight: 700; color: #fff;">Timeline Konten Harian</h3>
                 <p style="margin: 4px 0 0; opacity: 0.85; font-size: 13px; color: #fff;">Bulan <?= $monthNames[(int)$month] ?> <?= $year ?></p>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; flex: 1; justify-content: flex-end; max-width: 450px;">
                 <?php
                 $prevKeyNum = (int)$prevYear * 12 + (int)$prevMonth;
                 $minKeyNum = ($minYear !== null) ? (int)$minYear * 12 + (int)$minMonth : null;
                 $prevDisabled = ($minKeyNum !== null && $prevKeyNum < $minKeyNum);
                 ?>
                 <?php if ($prevDisabled): ?>
-                <span class="month-nav-icon" title="Bulan <?= $monthNames[$prevMonth] ?> <?= $prevYear ?> sudah masuk archive (maksimal bisa akses <?= $monthNames[(int)$minMonth] ?> <?= $minYear ?>)" style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; cursor: not-allowed; opacity: 0.5;">
-                    <i class="bi bi-chevron-left" style="font-size: 16px;"></i>
+                <span class="month-nav-icon" title="Bulan <?= $monthNames[$prevMonth] ?> <?= $prevYear ?> sudah masuk archive (maksimal bisa akses <?= $monthNames[(int)$minMonth] ?> <?= $minYear ?>)" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; cursor: not-allowed; opacity: 0.5;">
+                    <i class="bi bi-chevron-left" style="font-size: 15px;"></i>
                 </span>
                 <?php else: ?>
-                <a href="?view=timeline&bulan=<?= $prevMonth ?>&tahun=<?= $prevYear ?>" class="month-nav-icon" title="Bulan Sebelumnya (<?= $monthNames[$prevMonth] ?> <?= $prevYear ?>)" style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease; backdrop-filter: blur(8px); flex-shrink: 0;">
-                    <i class="bi bi-chevron-left" style="font-size: 16px;"></i>
+                <a href="?view=timeline&bulan=<?= $prevMonth ?>&tahun=<?= $prevYear ?>" class="month-nav-icon" title="Bulan Sebelumnya (<?= $monthNames[$prevMonth] ?> <?= $prevYear ?>)" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease; backdrop-filter: blur(8px); flex-shrink: 0;">
+                    <i class="bi bi-chevron-left" style="font-size: 15px;"></i>
                 </a>
                 <?php endif; ?>
-                <a href="?view=timeline&bulan=<?= $nextMonth ?>&tahun=<?= $nextYear ?>" class="month-nav-icon" title="Bulan Berikutnya (<?= $monthNames[$nextMonth] ?> <?= $nextYear ?>)" style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease; backdrop-filter: blur(8px); flex-shrink: 0;">
-                    <i class="bi bi-chevron-right" style="font-size: 16px;"></i>
+                <a href="?view=timeline&bulan=<?= $nextMonth ?>&tahun=<?= $nextYear ?>" class="month-nav-icon" title="Bulan Berikutnya (<?= $monthNames[$nextMonth] ?> <?= $nextYear ?>)" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease; backdrop-filter: blur(8px); flex-shrink: 0;">
+                    <i class="bi bi-chevron-right" style="font-size: 15px;"></i>
                 </a>
 
-                <div style="width: 240px; min-width: 180px; flex-shrink: 1;">
-                    <div style="position: relative; width: 100%; display: flex; align-items: center;">
-                        <i class="bi bi-search" style="position: absolute; left: 14px; color: #64748b; font-size: 14px; pointer-events: none; z-index: 10;"></i>
-                        <input type="text" id="planningSearchInput" class="form-control" placeholder="Pencarian task"
-                               style="padding-left: 38px !important; border-radius: 10px; height: 40px; font-size: 13px; border: 1px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.95); color: #0f172a;"
+                <div style="flex: 1 1 auto; max-width: 250px; min-width: 130px; margin-left: 2px;">
+                    <div class="planning-search-box" style="position: relative; width: 100%; display: flex; align-items: center;">
+                        <i class="bi bi-search search-icon" style="position: absolute; left: 11px; font-size: 13px; pointer-events: none; z-index: 10;"></i>
+                        <input type="text" id="planningSearchInput" class="form-control planning-search-field" placeholder="Pencarian task"
                                onkeyup="filterPlanningCardsPerLetter(this.value)" oninput="filterPlanningCardsPerLetter(this.value)">
                     </div>
                 </div>
@@ -909,11 +1017,20 @@ $kategoris = $kategoris ?? [];
                         'Belum Selesai' => 'status-belum-selesai',
                         default => 'status-belum'
                     };
+                    $statusIcon = match($status) {
+                        'Belum', 'Assigned', 'In Progress', 'Proses', 'Need Revision' => 'bi-hourglass-split',
+                        'Pending Approval' => 'bi-clock-history',
+                        'Approved' => 'bi-check-circle-fill',
+                        'Scheduled' => 'bi-calendar-check',
+                        'Publish', 'Selesai' => 'bi-check2-circle',
+                        'Belum Selesai' => 'bi-exclamation-circle',
+                        default => 'bi-hourglass-split'
+                    };
                 ?>
-                <div class="task-card" data-id="<?= $task['id'] ?>" data-status="<?= htmlspecialchars($task['status']) ?>" onclick="viewTask(event, <?= $task['id'] ?>)">
+                <div class="task-card <?= $statusClass ?>" data-id="<?= $task['id'] ?>" data-status="<?= htmlspecialchars($task['status']) ?>" onclick="viewTask(event, <?= $task['id'] ?>)">
 
 
-                    <span class="task-status-badge <?= $statusClass ?>"><?= htmlspecialchars($statusDisplay) ?></span>
+                    <span class="task-status-badge <?= $statusClass ?>"><i class="bi <?= $statusIcon ?>"></i> <?= htmlspecialchars($statusDisplay) ?></span>
 
                     <div style="flex: 1; display: flex; flex-direction: column; padding-right: 95px;">
                         <?php if (!empty($task['content_type'])): ?>
@@ -1152,7 +1269,7 @@ $kategoris = $kategoris ?? [];
 <div id="modalTask" class="custom-modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-content" style="max-width: 680px;">
         <div class="modal-header">
-            <h3 id="modalTaskTitle"><i class="bi bi-plus-circle me-2"></i>Tambah Task Baru</h3>
+            <h3 id="modalTaskTitle" style="display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin: 0;"><i class="bi bi-plus-circle" style="color: var(--tvri-blue, #003399); font-size: 20px; flex-shrink: 0;"></i><span>Tambah Task Harian</span></h3>
         </div>
         <div class="modal-body" style="padding: 20px 24px;">
             <form id="formTask" method="POST" action="<?= BASE_URL ?>/timeline/store" enctype="multipart/form-data">
@@ -1184,7 +1301,7 @@ $kategoris = $kategoris ?? [];
 
                                 <div class="multi-format-container" id="multiFormatContainer">
                                     <?php
-                                    $formatOptions = ['Feed', 'Reels', 'Reels Berita', 'Story', 'Thumbnail', 'Flyer/Poster', 'Take Video', 'Skrip / Materi', 'Teresterial', 'Carousel', 'Single Post', 'Image'];
+                                    $formatOptions = ['Feed', 'Reels', 'Reels Berita', 'Story', 'Thumbnail', 'Flyer/Poster', 'Take Video', 'Skrip / Materi', 'YouTube', 'Image'];
                                     foreach ($formatOptions as $fmt):
                                     ?>
                                         <button type="button" class="format-pill-btn" data-value="<?= htmlspecialchars($fmt) ?>" onclick="toggleFormatPill(this, event)">
@@ -1201,40 +1318,45 @@ $kategoris = $kategoris ?? [];
 
 
                 <div class="p-3 rounded-lg mb-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                    <label class="form-label" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #1a237e; letter-spacing: 0.5px; margin-bottom: 10px; display: block;">
+                    <label class="form-label" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #1a237e; letter-spacing: 0.5px; margin-bottom: 12px; display: block;">
                         <i class="bi bi-clock-history me-1"></i> Penjadwalan & PIC
                     </label>
 
                     <input type="hidden" name="task_date" id="taskDateInput" value="<?= date('Y-m-d') ?>">
 
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <div class="form-group mb-0">
-                                <label style="font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">PIC</label>
-                                <select name="assigned_to" id="taskAssignedToSelect" class="form-control" required onchange="var opt=this.options[this.selectedIndex]; document.getElementById('taskPicNameInput').value = opt.getAttribute('data-name') || '';">
-                                    <option value="">-- Pilih User Magang / PIC --</option>
-                                    <?php foreach ($usersList as $u): ?>
-                                        <option value="<?= (int)$u['id'] ?>" data-name="<?= htmlspecialchars($u['name']) ?>"><?= htmlspecialchars($u['name']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <input type="hidden" name="pic_name" id="taskPicNameInput" value="">
-                            </div>
-
-                            <div class="form-group mb-0 mt-2">
-                                <label style="font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Urutan (Sort Order)</label>
-                                <input type="number" name="sort_order" id="taskSortOrderInput" class="form-control" value="1" min="1">
+                                <label style="font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">PIC (Penanggung Jawab)</label>
+                                <div class="pic-select-container" style="max-width: 270px; width: 100%;">
+                                    <select name="assigned_to" id="taskAssignedToSelect" class="form-control" required style="width: 100%; height: 38px; font-size: 13px;" onchange="var opt=this.options[this.selectedIndex]; document.getElementById('taskPicNameInput').value = opt.getAttribute('data-name') || '';">
+                                        <option value="">-- Pilih User Magang / PIC --</option>
+                                        <?php foreach ($usersList as $u): ?>
+                                            <option value="<?= (int)$u['id'] ?>" data-name="<?= htmlspecialchars($u['name']) ?>"><?= htmlspecialchars($u['name']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <input type="hidden" name="pic_name" id="taskPicNameInput" value="">
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+
+                        <div class="col-12 col-sm-6">
+                            <div class="form-group mb-0">
+                                <label style="font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Urutan (Sort Order)</label>
+                                <input type="number" name="sort_order" id="taskSortOrderInput" class="form-control" value="1" min="1" style="height: 38px; font-size: 13px;">
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-sm-6">
                             <div class="form-group mb-0">
                                 <label style="font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">Deadline</label>
                                 <div class="input-group-date">
-                                    <input type="text" name="deadline" id="taskDeadlineInput" class="form-control" placeholder="dd/mm/yyyy" autocomplete="off">
+                                    <input type="text" name="deadline" id="taskDeadlineInput" class="form-control" placeholder="dd/mm/yyyy" autocomplete="off" style="height: 38px; font-size: 13px;">
                                     <input type="hidden" name="deadline_active" id="taskDeadlineActiveInput" value="0">
-                                    <button type="button" class="btn-date-icon" id="btnDeadlineIcon" tabindex="-1" title="Buka Kalender">
+                                    <button type="button" class="btn-date-icon" id="btnDeadlineIcon" tabindex="-1" title="Buka Kalender" style="height: 38px;">
                                         <i class="bi bi-calendar3"></i>
                                     </button>
-                                    <button type="button" class="btn-date-toggle inactive" id="btnDeadlineToggle" tabindex="-1" title="Aktifkan deadline">
+                                    <button type="button" class="btn-date-toggle inactive" id="btnDeadlineToggle" tabindex="-1" title="Aktifkan deadline" style="height: 38px;">
                                         <i class="bi bi-toggle-off"></i>
                                     </button>
                                 </div>
@@ -1553,14 +1675,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     wrapper.classList.remove('open-above');
                 }
                 wrapper.classList.add('open');
-                var parentGroup = wrapper.closest('.form-group') || wrapper.closest('.col-md-6') || wrapper.parentElement;
+                var colWrapper = wrapper.closest('[class*="col-"]');
+                if (colWrapper) {
+                    colWrapper.style.zIndex = '99999';
+                    colWrapper.style.position = 'relative';
+                }
+                var parentGroup = wrapper.closest('.form-group') || wrapper.parentElement;
                 if (parentGroup) {
-                    parentGroup.style.zIndex = '9999';
+                    parentGroup.style.zIndex = '99999';
                     parentGroup.style.position = 'relative';
                 }
-                var parentBox = wrapper.closest('.p-3');
+                var parentBox = wrapper.closest('.p-3') || wrapper.closest('.modal-body');
                 if (parentBox) {
-                    parentBox.style.zIndex = '9999';
+                    parentBox.style.zIndex = '99999';
                     parentBox.style.position = 'relative';
                 }
             }
@@ -1577,8 +1704,8 @@ document.addEventListener('DOMContentLoaded', function() {
             w.classList.remove('open');
             w.classList.remove('open-above');
         });
-        document.querySelectorAll('.form-group, .col-md-6, .p-3').forEach(function(el) {
-            if (el.style.zIndex === '9999') {
+        document.querySelectorAll('.form-group, [class*="col-"], .p-3, .modal-body').forEach(function(el) {
+            if (el.style.zIndex === '99999' || el.style.zIndex === '9999') {
                 el.style.zIndex = '';
                 if (el.style.position === 'relative') el.style.position = '';
             }
@@ -1690,7 +1817,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (mode === 'edit' && taskId) {
                 var titleEl = document.getElementById('modalTaskTitle');
-                if (titleEl) titleEl.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Edit Task Konten';
+                if (titleEl) titleEl.innerHTML = '<i class="bi bi-pencil-square" style="color: var(--tvri-blue, #003399); font-size: 20px; margin-right: 10px; flex-shrink: 0;"></i><span>Edit Task Konten</span>';
                 var btnSub = document.getElementById('btnSubmitTask');
                 if (btnSub) btnSub.innerHTML = '<i class="bi bi-check-circle me-1"></i> Update Task';
                 if (form) form.action = '<?= BASE_URL ?>/timeline/update/' + taskId;
@@ -1766,7 +1893,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .catch(function() {});
             } else {
                 var titleEl = document.getElementById('modalTaskTitle');
-                if (titleEl) titleEl.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Tambah Task Harian';
+                if (titleEl) titleEl.innerHTML = '<i class="bi bi-plus-circle" style="color: var(--tvri-blue, #003399); font-size: 20px; margin-right: 10px; flex-shrink: 0;"></i><span>Tambah Task Harian</span>';
                 var btnSub = document.getElementById('btnSubmitTask');
                 if (btnSub) btnSub.innerHTML = '<i class="bi bi-check-circle me-1"></i> Simpan Task Baru';
                 if (form) {
@@ -1960,7 +2087,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (showScheduleInfo) {
                     html += '<div class="mb-4">';
                     html += '  <div class="d-flex justify-content-between align-items-center mb-2"><span style="font-size:12px; font-weight:700; color:#334155; text-transform:uppercase;"><i class="bi bi-calendar-event me-1"></i> Informasi Schedule / Upload</span></div>';
-                    html += '  <div class="row g-2">';
+                    html += '  <div class="row g-2 schedule-info-row">';
                     html += '    <div class="col-6"><div style="background:#eff6ff; padding:10px 12px; border-radius:10px; border:1px solid #bfdbfe;"><span style="font-size:11px; color:#1d4ed8; font-weight:600; text-transform:uppercase; display:block; margin-bottom:2px;"><i class="bi bi-calendar3 me-1"></i> Tanggal Upload</span><strong style="font-size:13px; color:#1e3a8a;">' + formatDateDisplay(d.task_date) + '</strong></div></div>';
                     html += '    <div class="col-6"><div style="background:#eff6ff; padding:10px 12px; border-radius:10px; border:1px solid #bfdbfe;"><span style="font-size:11px; color:#1d4ed8; font-weight:600; text-transform:uppercase; display:block; margin-bottom:2px;"><i class="bi bi-clock me-1"></i> Jam Upload</span><strong style="font-size:13px; color:#1e3a8a;">' + escHtml(d.scheduled_time || '-') + '</strong></div></div>';
                     if (d.submitted_at) {
@@ -2018,6 +2145,23 @@ document.addEventListener('DOMContentLoaded', function() {
         return map[status] || 'Belum';
     }
 
+    function getStatusIcon(status) {
+        var map = {
+            'Belum': 'bi-hourglass-split',
+            'Assigned': 'bi-hourglass-split',
+            'In Progress': 'bi-hourglass-split',
+            'Proses': 'bi-hourglass-split',
+            'Need Revision': 'bi-hourglass-split',
+            'Pending Approval': 'bi-clock-history',
+            'Approved': 'bi-check-circle-fill',
+            'Scheduled': 'bi-calendar-check',
+            'Publish': 'bi-check2-circle',
+            'Selesai': 'bi-check2-circle',
+            'Belum Selesai': 'bi-exclamation-circle'
+        };
+        return map[status] || 'bi-hourglass-split';
+    }
+
     function formatDateDisplay(dStr) {
         if (!dStr) return '-';
         var p = dStr.split('-');
@@ -2049,9 +2193,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         var badge = card.querySelector('.task-status-badge');
                         if (badge) {
                             var label = getStatusDisplayLabel(status);
-                            var stColor = matchStatusColor(status);
-                            badge.textContent = label;
                             badge.className = 'task-status-badge';
+                            badge.innerHTML = '<i class="bi ' + getStatusIcon(status) + '"></i> ' + label;
                             if (status === 'Belum' || status === 'Assigned' || status === 'In Progress' || status === 'Proses' || status === 'Need Revision') badge.classList.add('status-belum');
                             else if (status === 'Pending Approval') badge.classList.add('status-menunggu');
                             else if (status === 'Approved') badge.classList.add('status-approved');
@@ -2399,28 +2542,6 @@ function filterByStatus() {
 
 </script>
 
-<?php if ($viewMode === 'timeline' && (int)$month === (int)date('m') && (int)$year === (int)date('Y')): ?>
-<script>
-
-
-(function() {
-    var displayedMonth = <?= (int)$month ?>;
-    var displayedYear = <?= (int)$year ?>;
-
-    function checkMonthRollover() {
-        var now = new Date();
-        var currentMonth = now.getMonth() + 1;
-        var currentYear = now.getFullYear();
-        if (currentMonth !== displayedMonth || currentYear !== displayedYear) {
-            var mm = ('0' + currentMonth).slice(-2);
-            window.location.href = '<?= BASE_URL ?>/planning?view=timeline&bulan=' + mm + '&tahun=' + currentYear;
-        }
-    }
-
-    setInterval(checkMonthRollover, 30000);
-})();
-</script>
-<?php endif; ?>
 <script>
 
 

@@ -10,6 +10,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title><?= $title ?? 'Content Planner' ?></title>
 
+    <script>
+        (function(){try{var t=localStorage.getItem('tvri-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();
+    </script>
+    <style>
+        html { background-color: #fafafa; }
+        html[data-theme="dark"] { background-color: #0f1117; color-scheme: dark; }
+    </style>
+
     
     <link rel="shortcut icon" href="<?= BASE_URL ?>/assets/img/favicon-tvri.svg">
     <link rel="apple-touch-icon" href="<?= BASE_URL ?>/assets/img/favicon-tvri.svg">
@@ -23,6 +31,7 @@
 
     
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tvri-theme.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/dark-mode.css?v=<?= APP_VERSION ?>">
 
     
     <?php if (!empty($cssFiles)): ?>
@@ -106,24 +115,14 @@
                     ]
                 ];
             } else {
-                
-                $sections[] = [
-                    'title' => '',
-                    'items' => [
-                        ['label' => 'Dashboard', 'icon' => 'bi-grid-1x2-fill', 'url' => '/dashboard'],
-                    ]
-                ];
-
+                // Non-magang (admin & superadmin)
                 $kontenItems = [
                     ['label' => 'Planning Konten', 'icon' => 'bi-calendar-check-fill', 'url' => '/planning'],
                 ];
 
                 if (in_array($userRole, ['superadmin', 'admin'])) {
                     $kontenItems[] = ['label' => 'Approval', 'icon' => 'bi-check2-square', 'url' => '/approval', 'badge' => $reviewCount + $recheckCount, 'badge_plain' => true];
-
-                    $kontenItems[] = ['label' => 'Scheduler', 'icon' => 'bi-clock-history', 'url' => '/scheduler'];
                     $kontenItems[] = ['label' => 'Kalender', 'icon' => 'bi-calendar3', 'url' => '/calendar'];
-                    $kontenItems[] = ['label' => 'Posting', 'icon' => 'bi-send-fill', 'url' => '/posting'];
                 }
 
                 $sections[] = [
@@ -132,7 +131,7 @@
                 ];
             }
 
-            
+            // Administrasi
             if (in_array($userRole, ['superadmin', 'admin'])) {
                 $pendingInternCount = Database::fetchColumn(
                     "SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE u.deleted_at IS NULL AND r.slug = 'magang' AND u.approval_status = 'pending'"
@@ -141,11 +140,8 @@
                 $sections[] = [
                     'title' => '',
                     'items' => [
-                        ['label' => 'Integrasi Sosmed', 'icon' => 'bi-share-fill', 'url' => '/social-media'],
-                        ['label' => 'Kelola User', 'icon' => 'bi-person-vcard-fill', 'url' => '/intern-users', 'badge' => $pendingInternCount],
+                        ['label' => 'Kelola User', 'icon' => 'bi-person-vcard-fill', 'url' => '/intern-users', 'badge' => $pendingInternCount, 'badge_plain' => true],
                         ['label' => 'Archive', 'icon' => 'bi-archive-fill', 'url' => '/archive'],
-                        ['label' => 'Kategori', 'icon' => 'bi-tags-fill', 'url' => '/master/kategori'],
-                        ['label' => 'Platform', 'icon' => 'bi-share', 'url' => '/master/platform'],
                     ]
                 ];
             }
@@ -155,9 +151,7 @@
                 $sections[] = [
                     'title' => '',
                     'items' => [
-                        ['label' => 'Roles', 'icon' => 'bi-shield-fill', 'url' => '/roles'],
                         ['label' => 'Activity Log', 'icon' => 'bi-activity', 'url' => '/activity-logs'],
-                        ['label' => 'Pengaturan', 'icon' => 'bi-gear-fill', 'url' => '/settings'],
                     ]
                 ];
             }
@@ -268,9 +262,10 @@
                     </button>
                     <div class="topbar-notif-dropdown" id="notifDropdown">
                         <div class="topbar-notif-header">
-                            <span class="font-semibold">Notifikasi</span>
-                            <span class="text-tertiary font-medium text-xs" id="notifCountLabel">(0)</span>
-                            <button onclick="markAllNotifRead()" class="btn btn-sm btn-ghost" style="padding:2px 8px;font-size:var(--text-xs);margin-left:auto;" title="Tandai semua dibaca">
+                            <span class="notif-header-icon"><i class="bi bi-bell"></i></span>
+                            <span class="topbar-notif-title">Notifikasi</span>
+                            <span class="topbar-notif-count-badge" id="notifCountLabel" style="display:none;">0</span>
+                            <button onclick="markAllNotifRead()" class="topbar-notif-markall" title="Tandai semua dibaca">
                                 <i class="bi bi-check-all"></i>
                             </button>
                         </div>
@@ -281,7 +276,9 @@
                             </div>
                         </div>
                         <div class="topbar-notif-footer">
-                            <a href="<?= BASE_URL ?>/activity-logs" class="text-xs">Lihat semua</a>
+                            <a href="<?= BASE_URL ?>/activity-logs">
+                                <i class="bi bi-archive me-1"></i> Lihat semua notifikasi
+                            </a>
                         </div>
                     </div>
                 </div>

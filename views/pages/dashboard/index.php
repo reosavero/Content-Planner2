@@ -221,53 +221,15 @@ $assignedTasks = $assignedTasks ?? [];
 
 
 
-<?php if (!empty($groupedTasks)): ?>
-    <?php foreach ($groupedTasks as $date => $group):
-        $dayNum = date('d', strtotime($date));
-        $dayName = $group['day_name'];
-        $taskCount = count($group['tasks']);
-    ?>
-    <div class="magang-date-group">
-        <div class="magang-date-header">
-            <span class="date-badge"><?= $dayNum ?></span>
-            <span class="day-name"><?= htmlspecialchars($dayName) ?> (<?= date('d/m/Y', strtotime($date)) ?>)</span>
-            <span class="task-count"><?= $taskCount ?> task</span>
-        </div>
-        <div class="magang-task-grid">
-            <?php foreach ($group['tasks'] as $task): ?>
-                <div class="task-card-dash" onclick="openTaskSubmitModal(<?= (int)$task['id'] ?>)">
-                    <div class="task-title">
-                        <?= htmlspecialchars($task['title'] ?: '(Belum ada judul)') ?>
-                    </div>
-
-                    <div class="task-meta">
-                        <span><i class="bi bi-person me-1"></i> <?= htmlspecialchars($task['assigned_by_name'] ?: 'Admin') ?></span>
-                        <?php if (!empty($task['deadline'])):
-                            $dlActive = isset($task['deadline_active']) ? (int)$task['deadline_active'] : 1;
-                            $dlColor = $dlActive ? '#c53030' : '#64748b';
-                        ?>
-                            <span style="color:<?= $dlColor ?>;"><i class="bi bi-clock me-1"></i> Deadline: <?= date('d/m/Y', strtotime($task['deadline'])) ?></span>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-    <?php endforeach; ?>
-<?php else: ?>
-    <div class="card">
-        <div class="card-body">
-            <div class="empty-state p-5 text-center"><i class="bi bi-inbox fs-1 text-tertiary"></i><h5 class="mt-2">Belum Ada Task</h5><p class="text-tertiary">Task dari Admin akan tampil di sini.</p></div>
-        </div>
-    </div>
-<?php endif; ?>
+<div id="magangTaskList">
+    <?php require __DIR__ . '/_magang_tasks.php'; ?>
+</div>
 
 
 <div class="modal" id="taskSubmitModal" onclick="if (event.target === this) closeTaskSubmitModal();">
     <div class="modal-content" style="max-width:640px;max-height:90vh;">
         <div class="modal-header">
             <h5><i class="bi bi-send me-2"></i> Kirim Hasil Task</h5>
-            <button type="button" class="modal-close" onclick="closeTaskSubmitModal()">&times;</button>
         </div>
         <div class="modal-body" id="taskSubmitBody" style="overflow-y:auto;">
             <div class="text-center py-5 text-tertiary">
@@ -513,6 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }, 50);
 });
+
 </script>
 
 
@@ -529,11 +492,11 @@ document.addEventListener('DOMContentLoaded', function() {
 .welcome-card {
     background: linear-gradient(135deg, #003399 0%, #0047b3 50%, #0055cc 100%);
     border-radius: var(--radius-xl);
-    padding: var(--space-8) var(--space-6);
+    padding: var(--space-12) var(--space-6);
     position: relative;
     overflow: hidden;
     color: white;
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-4);
 }
 .welcome-card::before {
     content: '';
@@ -561,34 +524,41 @@ document.addEventListener('DOMContentLoaded', function() {
     position: relative;
     z-index: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: var(--space-4);
+    justify-content: center;
+    text-align: center;
+    gap: var(--space-3);
 }
 .welcome-card-text {
-    flex: 1;
     min-width: 200px;
 }
 .welcome-card-greeting {
-    font-size: var(--text-xs);
-    font-weight: var(--font-weight-medium);
-    opacity: 0.75;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: #fff;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
-    margin-bottom: var(--space-1);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    margin-bottom: 0;
 }
 .welcome-card-title {
     font-family: var(--font-heading);
-    font-size: var(--text-2xl);
+    font-size: var(--text-4xl);
     font-weight: var(--font-weight-bold);
     color: #fff;
-    margin-bottom: var(--space-1);
+    margin-bottom: 0;
 }
 .welcome-card-sub {
-    font-size: var(--text-sm);
-    opacity: 0.8;
-    line-height: 1.5;
+    font-size: var(--text-base);
+    opacity: 0.85;
+    line-height: 1.6;
 }
 .welcome-card-actions {
     display: flex;
@@ -779,116 +749,63 @@ document.addEventListener('DOMContentLoaded', function() {
 .popular-post-engagement i {
     margin-right: 2px;
 }
+
+/* Jarak antar kartu dashboard: rapat & konsisten (horizontal + vertikal) */
+.dash-row {
+    gap: var(--space-4);
+}
+.dash-row:not(:last-child) {
+    margin-bottom: var(--space-4);
+}
+@media (min-width: 1024px) {
+    .dash-row > .col-lg-8 { flex-basis: calc(66.666% - var(--space-4)); }
+    .dash-row > .col-lg-5 { flex-basis: calc(41.666% - var(--space-4)); }
+    .dash-row > .col-lg-4 { flex-basis: calc(33.333% - var(--space-4)); }
+    .dash-row > .col-lg-3 { flex-basis: calc(25% - var(--space-4)); }
+}
+
+/* Animasi reveal saat scroll (muncul tiap kali kartu masuk viewport) */
+.anim-fade-up {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.anim-fade-up.in-view {
+    opacity: 1;
+    transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+    .anim-fade-up {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
 </style>
 
 
-<div class="welcome-card">
+<div class="welcome-card anim-fade-up">
     <div class="welcome-card-content">
         <div class="welcome-card-text">
             <div class="welcome-card-greeting">
-                <i class="bi bi-sun"></i> Selamat <?= date('H') < 12 ? 'Pagi' : (date('H') < 18 ? 'Siang' : 'Malam') ?>,
+                <i class="bi bi-sun-fill"></i> Selamat <?= date('H') < 12 ? 'Pagi' : (date('H') < 18 ? 'Siang' : 'Malam') ?>,
             </div>
             <div class="welcome-card-title">
                 <?= htmlspecialchars($userName) ?> 👋
             </div>
             <div class="welcome-card-sub">
-                <?= htmlspecialchars($userRoleName) ?> · TVRI Jawa Timur
+                TVRI Jawa Timur
                 · <?= date('d F Y') ?>
             </div>
         </div>
-        <div class="welcome-card-actions">
-            <a href="<?= BASE_URL ?>/planning/create" class="btn btn-sm">
-                <i class="bi bi-plus-lg"></i> Buat Konten
-            </a>
-            <a href="<?= BASE_URL ?>/calendar" class="btn btn-sm">
-                <i class="bi bi-calendar3"></i> Kalender
-            </a>
-        </div>
     </div>
 </div>
 
 
-<div class="row stagger">
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="card card-accent-primary">
-            <div class="stat-card">
-                <div class="stat-card-icon stat-card-icon-primary">
-                    <i class="bi bi-calendar-check-fill"></i>
-                </div>
-                <div class="stat-card-body">
-                    <div class="stat-card-label">Total Planning</div>
-                    <div class="stat-card-value"><?= number_format($stats['total_planning'] ?? 0) ?></div>
-                    <?php if (!empty($trend['planning'])): ?>
-                        <div class="stat-card-change <?= ($trend['planning'] ?? 0) >= 0 ? 'stat-card-change-up' : 'stat-card-change-down' ?>">
-                            <i class="bi bi-<?= ($trend['planning'] ?? 0) >= 0 ? 'arrow-up' : 'arrow-down' ?>"></i>
-                            <?= number_format(abs($trend['planning'] ?? 0)) ?>% bulan ini
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="card card-accent-success">
-            <div class="stat-card">
-                <div class="stat-card-icon stat-card-icon-success">
-                    <i class="bi bi-check-circle-fill"></i>
-                </div>
-                <div class="stat-card-body">
-                    <div class="stat-card-label">Berhasil Posting</div>
-                    <div class="stat-card-value"><?= number_format($stats['total_success'] ?? 0) ?></div>
-                    <?php if (!empty($trend['success'])): ?>
-                        <div class="stat-card-change <?= ($trend['success'] ?? 0) >= 0 ? 'stat-card-change-up' : 'stat-card-change-down' ?>">
-                            <i class="bi bi-<?= ($trend['success'] ?? 0) >= 0 ? 'arrow-up' : 'arrow-down' ?>"></i>
-                            <?= number_format(abs($trend['success'] ?? 0)) ?>% bulan ini
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="card card-accent-warning">
-            <div class="stat-card">
-                <div class="stat-card-icon stat-card-icon-warning">
-                    <i class="bi bi-clock-fill"></i>
-                </div>
-                <div class="stat-card-body">
-                    <div class="stat-card-label">Terjadwal</div>
-                    <div class="stat-card-value"><?= number_format($stats['total_scheduled'] ?? 0) ?></div>
-                    <div class="stat-card-change stat-card-change-up">
-                        <i class="bi bi-calendar"></i> Minggu ini
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="card card-accent-info">
-            <div class="stat-card">
-                <div class="stat-card-icon stat-card-icon-info">
-                    <i class="bi bi-link-45deg"></i>
-                </div>
-                <div class="stat-card-body">
-                    <div class="stat-card-label">Akun Terhubung</div>
-                    <div class="stat-card-value"><?= number_format($stats['connected_accounts'] ?? 0) ?></div>
-                    <div class="stat-card-change stat-card-change-up">
-                        <i class="bi bi-share"></i> <?= number_format($stats['total_platforms'] ?? 0) ?> platform
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<div class="row">
+<div class="row dash-row">
 
     <div class="col-12 col-lg-8">
-        <div class="card">
+        <div class="card anim-fade-up" style="transition-delay: 80ms;">
             <div class="card-header">
                 <h5><i class="bi bi-bar-chart-line-fill"></i> Tren Posting</h5>
                 <div class="btn-group" style="gap: 4px;">
@@ -905,7 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     <div class="col-12 col-lg-4">
-        <div class="card">
+        <div class="card anim-fade-up" style="transition-delay: 120ms;">
             <div class="card-header">
                 <h5><i class="bi bi-pie-chart-fill"></i> Distribusi Platform</h5>
             </div>
@@ -966,10 +883,11 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 
-<div class="row" style="margin-top: 0;">
+
+<div class="row dash-row">
 
     <div class="col-12 col-lg-5">
-        <div class="card">
+        <div class="card anim-fade-up" style="transition-delay: 160ms;">
             <div class="card-header">
                 <h5><i class="bi bi-clock-history"></i> Jadwal Akan Datang</h5>
                 <a href="<?= BASE_URL ?>/calendar" class="btn btn-sm btn-ghost">
@@ -1032,7 +950,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     <div class="col-12 col-lg-4">
-        <div class="card">
+        <div class="card anim-fade-up" style="transition-delay: 200ms;">
             <div class="card-header">
                 <h5><i class="bi bi-activity"></i> Aktivitas Terkini</h5>
                 <a href="<?= BASE_URL ?>/activity-logs" class="btn btn-sm btn-ghost">
@@ -1076,7 +994,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     <div class="col-12 col-lg-3">
-        <div class="card">
+        <div class="card anim-fade-up" style="transition-delay: 240ms;">
             <div class="card-header">
                 <h5><i class="bi bi-trophy-fill" style="color: #ffd700;"></i> Posting Populer</h5>
             </div>
@@ -1112,11 +1030,108 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
+<div class="row dash-row">
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card card-accent-primary anim-fade-up" style="transition-delay: 280ms;">
+            <div class="stat-card">
+                <div class="stat-card-icon stat-card-icon-primary">
+                    <i class="bi bi-calendar-check-fill"></i>
+                </div>
+                <div class="stat-card-body">
+                    <div class="stat-card-label">Total Planning</div>
+                    <div class="stat-card-value"><?= number_format($stats['total_planning'] ?? 0) ?></div>
+                    <?php if (!empty($trend['planning'])): ?>
+                        <div class="stat-card-change <?= ($trend['planning'] ?? 0) >= 0 ? 'stat-card-change-up' : 'stat-card-change-down' ?>">
+                            <i class="bi bi-<?= ($trend['planning'] ?? 0) >= 0 ? 'arrow-up' : 'arrow-down' ?>"></i>
+                            <?= number_format(abs($trend['planning'] ?? 0)) ?>% bulan ini
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card card-accent-success anim-fade-up" style="transition-delay: 320ms;">
+            <div class="stat-card">
+                <div class="stat-card-icon stat-card-icon-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="stat-card-body">
+                    <div class="stat-card-label">Berhasil Posting</div>
+                    <div class="stat-card-value"><?= number_format($stats['total_success'] ?? 0) ?></div>
+                    <?php if (!empty($trend['success'])): ?>
+                        <div class="stat-card-change <?= ($trend['success'] ?? 0) >= 0 ? 'stat-card-change-up' : 'stat-card-change-down' ?>">
+                            <i class="bi bi-<?= ($trend['success'] ?? 0) >= 0 ? 'arrow-up' : 'arrow-down' ?>"></i>
+                            <?= number_format(abs($trend['success'] ?? 0)) ?>% bulan ini
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card card-accent-warning anim-fade-up" style="transition-delay: 360ms;">
+            <div class="stat-card">
+                <div class="stat-card-icon stat-card-icon-warning">
+                    <i class="bi bi-clock-fill"></i>
+                </div>
+                <div class="stat-card-body">
+                    <div class="stat-card-label">Terjadwal</div>
+                    <div class="stat-card-value"><?= number_format($stats['total_scheduled'] ?? 0) ?></div>
+                    <div class="stat-card-change stat-card-change-up">
+                        <i class="bi bi-calendar"></i> Minggu ini
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card card-accent-info anim-fade-up" style="transition-delay: 400ms;">
+            <div class="stat-card">
+                <div class="stat-card-icon stat-card-icon-info">
+                    <i class="bi bi-link-45deg"></i>
+                </div>
+                <div class="stat-card-body">
+                    <div class="stat-card-label">Akun Terhubung</div>
+                    <div class="stat-card-value"><?= number_format($stats['connected_accounts'] ?? 0) ?></div>
+                    <div class="stat-card-change stat-card-change-up">
+                        <i class="bi bi-share"></i> <?= number_format($stats['total_platforms'] ?? 0) ?> platform
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 
 
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
+    // Animasi reveal saat scroll: kartu muncul setiap kali masuk viewport
+    var revealEls = document.querySelectorAll('.anim-fade-up');
+    if (revealEls.length && 'IntersectionObserver' in window) {
+        var revealObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                } else {
+                    entry.target.classList.remove('in-view');
+                }
+            });
+        }, { threshold: 0.15 });
+        revealEls.forEach(function(el) {
+            revealObserver.observe(el);
+        });
+    } else if (revealEls.length) {
+        revealEls.forEach(function(el) { el.classList.add('in-view'); });
+    }
 
     var trendCtx = document.getElementById('trendChart');
     if (trendCtx) {

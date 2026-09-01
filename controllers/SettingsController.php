@@ -11,14 +11,31 @@ class SettingsController extends Controller
 
     public function index(): void
     {
+        // Hanya setting yang benar-benar dipakai oleh kode aplikasi
+        $usedKeys = [
+            'scheduler_enabled', 'scheduler_batch_size', 'scheduler_retry_delay',
+            'auto_post_enabled', 'auto_post_interval_seconds', 'auto_post_max_retry',
+            'backup_enabled', 'backup_retention_days',
+        ];
+
+        $placeholders = implode(',', array_fill(0, count($usedKeys), '?'));
         $settings = Database::fetchAll(
-            "SELECT * FROM settings ORDER BY `group`, id ASC"
+            "SELECT * FROM settings WHERE `key` IN ({$placeholders}) ORDER BY `group`, id ASC",
+            $usedKeys
         );
 
-        
         $grouped = [];
         foreach ($settings as $s) {
             $grouped[$s['group']][] = $s;
+        }
+
+        // Urutan section yang mudah dipahami
+        $sectionOrder = ['scheduler', 'auto_post', 'backup'];
+        $ordered = [];
+        foreach ($sectionOrder as $g) {
+            if (isset($grouped[$g])) {
+                $ordered[$g] = $grouped[$g];
+            }
         }
 
         $backups = Database::fetchAll(
@@ -27,7 +44,7 @@ class SettingsController extends Controller
 
         $this->view('settings/index', [
             'title' => 'Pengaturan Sistem',
-            'grouped' => $grouped,
+            'grouped' => $ordered,
             'backups' => $backups,
             'breadcrumbs' => [
                 ['label' => 'Pengaturan', 'url' => '#'],

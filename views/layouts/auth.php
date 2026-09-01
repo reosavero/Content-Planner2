@@ -8,6 +8,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="csrf-token" content="<?= Session::csrfToken() ?>">
     <title><?= $title ?? 'Content Planner - TVRI Jawa Timur' ?></title>
+    <script>
+        (function(){try{var t=localStorage.getItem('tvri-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();
+    </script>
+    <style>
+        html { background-color: #fafafa; }
+        html[data-theme="dark"] { background-color: #0f1117; color-scheme: dark; }
+    </style>
     <link rel="shortcut icon" href="<?= BASE_URL ?>/assets/img/favicon-tvri.svg">
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/bootstrap-icons/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -15,6 +22,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/tvri-theme.css?v=<?= APP_VERSION ?>">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/dark-mode.css?v=<?= APP_VERSION ?>">
     <style>
         html { overflow: hidden; height: 100%; }
         body { overflow: auto; height: 100%; -webkit-overflow-scrolling: touch; overscroll-behavior: none; opacity: 1; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-weight: 450; }
@@ -69,12 +77,14 @@
         .auth-header {
             text-align: center;
             margin-bottom: 32px;
+            animation: authHeaderFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .auth-header-logo {
             display: block;
             margin: 0 auto 16px;
             width: 90px;
             height: auto;
+            animation: logoPulseFloat 4s ease-in-out infinite;
         }
         .auth-header-title {
             font-size: 28px;
@@ -102,6 +112,11 @@
             padding: 32px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.1);
             border: 1px solid rgba(255,255,255,0.3);
+            animation: authCardScaleUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .auth-card:hover {
+            box-shadow: 0 24px 70px rgba(0,0,0,0.25), 0 10px 30px rgba(0,0,0,0.12);
         }
         .auth-card-header {
             margin-bottom: 24px;
@@ -123,9 +138,13 @@
             font-size: 13px;
             text-decoration: none;
             font-weight: 500;
+            transition: color 0.2s ease, transform 0.2s ease;
+            display: inline-block;
         }
         .auth-link:hover {
             text-decoration: underline;
+            color: #003399;
+            transform: translateY(-1px);
         }
         
         
@@ -138,15 +157,53 @@
         .auth-bubble {
             position: absolute;
             border-radius: 50%;
-            background: rgba(255,255,255,0.05);
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), rgba(255,255,255,0.03));
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            will-change: transform;
         }
-        .auth-bubble-1 { width: 400px; height: 400px; top: -100px; right: -100px; }
-        .auth-bubble-2 { width: 300px; height: 300px; bottom: -50px; left: -80px; }
-        .auth-bubble-3 { width: 200px; height: 200px; top: 30%; right: -60px; }
-        .auth-bubble-4 { width: 150px; height: 150px; bottom: 20%; left: 10%; }
-        .auth-bubble-5 { width: 100px; height: 100px; top: 15%; left: 5%; }
-        .auth-bubble-6 { width: 80px; height: 80px; bottom: 10%; right: 15%; }
-        .auth-bubble-7 { width: 60px; height: 60px; top: 40%; left: 30%; }
+        .auth-bubble-1 { width: 400px; height: 400px; top: -100px; right: -100px; animation: floatOrb 16s ease-in-out infinite; }
+        .auth-bubble-2 { width: 300px; height: 300px; bottom: -50px; left: -80px; animation: floatOrbAlt 20s ease-in-out infinite 1s; }
+        .auth-bubble-3 { width: 200px; height: 200px; top: 30%; right: -60px; animation: floatOrb 14s ease-in-out infinite 2s; }
+        .auth-bubble-4 { width: 150px; height: 150px; bottom: 20%; left: 10%; animation: floatOrbAlt 18s ease-in-out infinite 0.5s; }
+        .auth-bubble-5 { width: 100px; height: 100px; top: 15%; left: 5%; animation: floatOrb 12s ease-in-out infinite 1.5s; }
+        .auth-bubble-6 { width: 80px; height: 80px; bottom: 10%; right: 15%; animation: floatOrbAlt 15s ease-in-out infinite 2.5s; }
+        .auth-bubble-7 { width: 60px; height: 60px; top: 40%; left: 30%; animation: floatOrb 10s ease-in-out infinite 3s; }
+        
+        /* Keyframe Animations */
+        @keyframes floatOrb {
+            0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+            50% { transform: translateY(-30px) scale(1.08) rotate(12deg); }
+        }
+        @keyframes floatOrbAlt {
+            0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+            50% { transform: translateY(25px) scale(0.92) rotate(-10deg); }
+        }
+        @keyframes logoPulseFloat {
+            0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15)); }
+            50% { transform: translateY(-7px) scale(1.04); filter: drop-shadow(0 12px 24px rgba(0,91,172,0.45)); }
+        }
+        @keyframes authHeaderFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes authCardScaleUp {
+            from { opacity: 0; transform: translateY(35px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes authFieldFadeIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-card form .form-group:nth-of-type(1) { animation: authFieldFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+        .auth-card form .form-group:nth-of-type(2) { animation: authFieldFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
+        .auth-card form .form-group:nth-of-type(3) { animation: authFieldFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both; }
+        .auth-card form .form-group:nth-of-type(4) { animation: authFieldFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both; }
+        .auth-card form .form-group:nth-of-type(5) { animation: authFieldFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both; }
+        .auth-card form .form-group:nth-of-type(6) { animation: authFieldFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both; }
+        .auth-card form .btn,
+        .auth-card form .d-flex { animation: authFieldFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both; }
         
         
         .form-group {
@@ -200,6 +257,87 @@
             background: #ffffff;
             box-shadow: 0 0 0 3px rgba(0, 91, 172, 0.1);
         }
+
+        /* Input halaman auth selalu tampil default/terang meskipun tema gelap aktif */
+        [data-theme="dark"] .auth-card .form-group input,
+        [data-theme="dark"] .auth-card .form-group select,
+        [data-theme="dark"] .auth-card .form-group textarea {
+            background: #f9fafb !important;
+            border-color: #e5e7eb !important;
+            color: #1f2937 !important;
+        }
+        [data-theme="dark"] .auth-card .form-group input:focus,
+        [data-theme="dark"] .auth-card .form-group select:focus,
+        [data-theme="dark"] .auth-card .form-group textarea:focus {
+            background: #ffffff !important;
+            border-color: #005BAC !important;
+            box-shadow: 0 0 0 3px rgba(0, 91, 172, 0.1) !important;
+        }
+
+        /* Indikator langkah halaman auth selalu tampil default/terang */
+        [data-theme="dark"] .auth-card .step-number {
+            background: #e2e8f0 !important;
+            color: #64748b !important;
+        }
+        [data-theme="dark"] .auth-card .step-item.active .step-number {
+            background: #003399 !important;
+            color: #ffffff !important;
+        }
+        [data-theme="dark"] .auth-card .step-item.completed .step-number {
+            background: #2e7d32 !important;
+            color: #ffffff !important;
+        }
+        [data-theme="dark"] .auth-card .step-label {
+            color: #64748b !important;
+        }
+        [data-theme="dark"] .auth-card .step-item.active .step-label {
+            color: #003399 !important;
+        }
+        [data-theme="dark"] .auth-card .step-line {
+            background: #e2e8f0 !important;
+        }
+        [data-theme="dark"] .auth-card .step-line.active {
+            background: #003399 !important;
+        }
+
+        /* Tombol sekunder (Kembali) halaman auth selalu tampil default/terang */
+        [data-theme="dark"] .auth-card .btn-secondary {
+            background-color: #f1f5f9 !important;
+            color: #475569 !important;
+            border-color: #cbd5e1 !important;
+        }
+        [data-theme="dark"] .auth-card .btn-secondary:hover {
+            background-color: #e2e8f0 !important;
+            filter: none;
+        }
+
+        /* Heading konten (h4/h5) halaman auth memakai font Inter agar konsisten */
+        .auth-card h4,
+        .auth-card h5 {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        [data-theme="dark"] .auth-card h4,
+        [data-theme="dark"] .auth-card h5 {
+            color: #1a1d29 !important;
+        }
+        /* Teks bantu muted halaman auth selalu tampil default/terang */
+        [data-theme="dark"] .auth-card .text-muted,
+        [data-theme="dark"] .auth-card .text-secondary {
+            color: #6b7280 !important;
+        }
+
+        /* Kotak status halaman auth selalu tampil default/terang */
+        [data-theme="dark"] .auth-card [style*="background:#f8fafc"],
+        [data-theme="dark"] .auth-card [style*="background: #f8fafc"] {
+            background: #f8fafc !important;
+        }
+        [data-theme="dark"] .auth-card [style*="#cbd5e1"] {
+            border-color: #cbd5e1 !important;
+        }
+        [data-theme="dark"] .auth-card [style*="color:#334155"],
+        [data-theme="dark"] .auth-card [style*="color: #334155"] {
+            color: #334155 !important;
+        }
         .input-wrapper .password-toggle {
             position: absolute;
             right: 10px;
@@ -239,10 +377,32 @@
         .btn-primary {
             background: linear-gradient(135deg, #003399, #005BAC);
             color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 50%;
+            height: 200%;
+            background: linear-gradient(60deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+            transform: rotate(25deg);
+            transition: all 0.6s ease;
+            pointer-events: none;
         }
         .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 24px rgba(0,51,153,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(0,51,153,0.35);
+        }
+        .btn-primary:hover::after {
+            left: 120%;
+        }
+        .btn-primary:active {
+            transform: translateY(0) scale(0.98) !important;
+            box-shadow: 0 4px 12px rgba(0,51,153,0.2) !important;
         }
         .btn-primary:disabled {
             opacity: 0.7;
@@ -257,6 +417,35 @@
         .sonner-close { display: none !important; }
         
         
+        .web-toast-dropdown {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999999;
+            min-width: 280px;
+            max-width: 90vw;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 767px) {
+            .web-toast-dropdown {
+                top: 14px !important;
+                left: 12px !important;
+                right: 12px !important;
+                transform: none !important;
+                width: auto !important;
+                max-width: calc(100vw - 24px) !important;
+                min-width: 0 !important;
+            }
+            .web-toast-content {
+                width: 100% !important;
+                box-sizing: border-box !important;
+                justify-content: center !important;
+                text-align: center !important;
+            }
+        }
+
         @media (max-width: 480px) {
             .auth-card { padding: 24px 20px; }
             .auth-header-title { font-size: 24px; }
@@ -330,6 +519,17 @@
             </div>
 
         </div>
+    </div>
+
+    <div id="pageLoadingOverlay" class="page-loading-overlay" aria-hidden="true">
+        <div class="page-loading-box">
+            <div class="page-loading-spinner"></div>
+            <div class="page-loading-text">Memproses...</div>
+        </div>
+    </div>
+
+    <div id="webNotificationDropdown" class="web-toast-dropdown" style="display: none;">
+        <div class="web-toast-content" id="webNotificationContent"></div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

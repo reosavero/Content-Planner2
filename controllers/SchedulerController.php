@@ -53,6 +53,13 @@ class SchedulerController extends Controller
             "SELECT id, name, color FROM tags WHERE is_active = 1 ORDER BY name ASC"
         );
 
+        if ($this->isAjax()) {
+            ob_start();
+            $this->viewPartial('scheduler/_cards', ['tasks' => $tasks]);
+            $html = ob_get_clean();
+            $this->success(['html' => $html]);
+        }
+
         $this->view('scheduler/index', [
             'title' => 'Scheduler & Auto Posting',
             'tasks' => $tasks,
@@ -187,18 +194,6 @@ class SchedulerController extends Controller
             [$platformIdsStr, $taskDate, $scheduledTime, $taskId]
         );
 
-        if (!empty($task['assignee_id'])) {
-            require_once HELPERS_PATH . 'Notification.php';
-            try {
-                Notification::create(
-                    (int)$task['assignee_id'],
-                    'Task Berhasil Terupload',
-                    "Task \"{$task['title']}\" otomatis terupload ke {$platformStr}.",
-                    'success', BASE_URL . '/posting', 'bi-send-fill'
-                );
-            } catch (\Throwable $e) {}
-        }
-
         $this->json([
             'success' => true,
             'message' => "Postingan \"{$task['title']}\" otomatis terupload ke " . $platformStr . "!"
@@ -229,6 +224,12 @@ class SchedulerController extends Controller
         Database::execute(
             "UPDATE timeline_tasks SET target_platforms = ?, task_date = ?, scheduled_time = ?, status = 'Scheduled', updated_at = NOW() WHERE id = ?",
             [$platformIdsStr, $taskDate, $scheduledTime, $taskId]
+        );
+
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'update_schedule', 'scheduler', 'timeline_tasks', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), $taskId, 'Jadwal & media task #' . $taskId . ' diperbarui', $_SERVER['REMOTE_ADDR']]
         );
 
         $this->json(['success' => true, 'message' => 'Jadwal & media posting berhasil disimpan. Status task: Schedule.']);
@@ -265,6 +266,7 @@ class SchedulerController extends Controller
         );
         if ($enabled !== '1') {
             $this->json(['success' => false, 'message' => 'Auto posting disabled']);
+            return;
         }
 
         $batchSize = (int) Database::fetchColumn(
@@ -276,23 +278,26 @@ class SchedulerController extends Controller
         ) ?: 30;
 
         
+        // Ambil dari planning_konten_platform yang pending + scheduled_at <= NOW
         $queue = Database::fetchAll(
-            "SELECT sq.*, pk.judul, pk.caption, pk.media_path, pk.media_type, pk.hashtag_text,
-                    pk.media_thumbnail, pk.jenis_konten,
+            "SELECT pkp.*, pk.judul, pk.caption, pk.hashtag_text, pk.media_path, pk.media_type,
                     pa.access_token, pa.account_id, pa.account_username, pa.account_name,
                     p.slug as platform_slug, p.name as platform_name
-             FROM scheduler_queue sq
-             JOIN planning_konten pk ON pk.id = sq.planning_id
-             JOIN platform_akun pa ON pa.id = sq.platform_akun_id
-             JOIN platform_sosmed p ON p.id = pa.platform_id
-             WHERE sq.status = 'queued'
-             AND sq.scheduled_at <= NOW()
-             ORDER BY sq.priority DESC, sq.scheduled_at ASC
+             FROM planning_konten_platform pkp
+             JOIN planning_konten pk ON pk.id = pkp.planning_konten_id
+             JOIN platform_sosmed p ON p.slug = pkp.platform
+             JOIN platform_akun pa ON pa.platform_id = p.id
+                 AND pa.is_connected = 1 AND pa.is_active = 1 AND pa.token_status = 'active'
+             WHERE pkp.status = 'pending'
+             AND pk.status IN ('approved', 'scheduled')
+             AND pk.scheduled_at <= NOW()
+             ORDER BY pk.scheduled_at ASC
              LIMIT {$batchSize}"
         );
 
         if (empty($queue)) {
             $this->json(['success' => true, 'message' => 'Tidak ada antrian', 'processed' => 0]);
+            return;
         }
 
         require_once HELPERS_PATH . 'SocialMediaAPI.php';
@@ -303,66 +308,62 @@ class SchedulerController extends Controller
 
         foreach ($queue as $item) {
             $processed++;
-            $startTime = microtime(true);
-
+            $pkId = $item['planning_konten_id'];
+            $platform = $item['platform_slug'];
             
-            Database::execute(
-                "UPDATE scheduler_queue SET status = 'processing', processed_at = NOW() WHERE id = ?",
-                [$item['id']]
-            );
-
+            // Update status ke publishing
+            $this->updatePlatformStatus($pkId, $platform, 'publishing', null, null);
             Database::execute(
                 "UPDATE planning_konten SET status = 'posting' WHERE id = ?",
-                [$item['planning_id']]
+                [$pkId]
             );
 
-            
             $planningData = [
                 'judul' => $item['judul'],
                 'caption' => $item['caption'],
                 'media_path' => $item['media_path'],
                 'media_type' => $item['media_type'],
-                'hashtag_text' => $item['hashtag_text'],
-                'media_thumbnail' => $item['media_thumbnail'],
+                'hashtag_text' => $item['hashtag_text'] ?? '',
             ];
 
             $accountData = [
-                'platform_slug' => $item['platform_slug'],
+                'platform_slug' => $platform,
                 'access_token' => $item['access_token'],
                 'account_id' => $item['account_id'],
                 'account_username' => $item['account_username'],
                 'account_name' => $item['account_name'],
             ];
 
-            
+            $startTime = microtime(true);
             $result = SocialMediaAPI::post($planningData, $accountData);
-            
             $duration = (int)((microtime(true) - $startTime) * 1000);
 
-            
-            Database::insert(
-                "INSERT INTO auto_post_logs (planning_id, platform_akun_id, platform, action, request_data, response_data, error_message, http_status, duration_ms)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            $accId = Database::fetchColumn(
+                "SELECT id FROM platform_akun WHERE platform_id = (SELECT id FROM platform_sosmed WHERE slug = ?) AND is_connected = 1 AND is_active = 1 AND token_status = 'active'",
+                [$platform]
+            );
+
+            // Log ke posting_logs
+            Database::execute(
+                "INSERT INTO posting_logs (planning_id, platform_akun_id, action, status, error_message, http_code, ip_address, performed_by, duration_ms, created_at)
+                 VALUES (?, ?, 'posting', ?, ?, ?, ?, ?, ?, NOW())",
                 [
-                    $item['planning_id'],
-                    $item['platform_akun_id'],
-                    $item['platform_slug'],
+                    $pkId,
+                    $accId,
                     $result['success'] ? 'success' : 'failed',
-                    json_encode($planningData),
-                    json_encode($result),
                     $result['error'] ?? null,
-                    $result['success'] ? 200 : 400,
-                    $duration,
+                    $result['success'] ? 200 : ($result['http_code'] ?? 400),
+                    $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                    Session::get('user_id') ?: 0,
+                    $duration
                 ]
             );
 
             if ($result['success']) {
+                $postId = $result['post_id'] ?? null;
+                $postUrl = $result['post_url'] ?? null;
                 
-                Database::execute(
-                    "UPDATE scheduler_queue SET status = 'success', response_data = ?, completed_at = NOW() WHERE id = ?",
-                    [json_encode($result), $item['id']]
-                );
-
+                $this->updatePlatformStatus($pkId, $platform, 'success', $postId, null);
                 
                 Database::execute(
                     "UPDATE planning_konten SET 
@@ -372,62 +373,56 @@ class SchedulerController extends Controller
                         post_url = ?,
                         updated_at = NOW()
                      WHERE id = ?",
-                    [$result['post_id'], $result['post_url'], $item['planning_id']]
+                    [$postId, $postUrl, $pkId]
                 );
 
-                
                 Database::execute(
                     "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
-                     VALUES (?, ?, 'auto_post', 'scheduler', 'planning_konten', ?, 'Auto posting sukses ke {$item['platform_name']}: {$item['judul']}', ?)",
-                    [Session::get('user_id') ?: 0, Session::get('user_role_id') ?: 0, $item['planning_id'], $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']
+                     VALUES (?, ?, 'auto_post', 'scheduler', 'planning_konten', ?, ?, ?)",
+                    [
+                        Session::get('user_id') ?: 0,
+                        Session::get('user_role_id') ?: 0,
+                        $pkId,
+                        "Auto posting sukses ke {$item['platform_name']}: {$item['judul']}",
+                        $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+                    ]
                 );
 
                 $success++;
 
             } else {
-                
-                $retryCount = Database::fetchColumn(
-                    "SELECT retry_count FROM scheduler_queue WHERE id = ?",
-                    [$item['id']]
-                ) ?: 0;
-                $retryCount++;
-
+                $retryCount = ($item['retry_count'] ?? 0) + 1;
                 $maxRetry = (int) Database::fetchColumn(
                     "SELECT value FROM settings WHERE `key` = 'auto_post_max_retry'"
                 ) ?: 3;
 
                 if ($retryCount >= $maxRetry) {
-                    Database::execute(
-                        "UPDATE scheduler_queue SET status = 'failed', retry_count = ?, error_message = ?, completed_at = NOW() WHERE id = ?",
-                        [$retryCount, $result['error'], $item['id']]
-                    );
+                    $this->updatePlatformStatus($pkId, $platform, 'failed', null, $result['error'], $retryCount);
                     Database::execute(
                         "UPDATE planning_konten SET status = 'failed', error_message = ?, retry_count = ?, updated_at = NOW() WHERE id = ?",
-                        [$result['error'], $retryCount, $item['planning_id']]
+                        [$result['error'], $retryCount, $pkId]
                     );
                 } else {
-                    
                     $retryDelay = (int) Database::fetchColumn(
                         "SELECT value FROM settings WHERE `key` = 'scheduler_retry_delay'"
                     ) ?: 5;
                     
+                    $nextRun = date('Y-m-d H:i:s', strtotime("+{$retryDelay} minutes"));
                     Database::execute(
-                        "UPDATE scheduler_queue SET status = 'retry', retry_count = ?, error_message = ?, scheduled_at = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE id = ?",
-                        [$retryCount, $result['error'], $retryDelay, $item['id']]
+                        "UPDATE planning_konten_platform SET status = 'pending', retry_count = ?, error_message = ?, updated_at = NOW() WHERE planning_konten_id = ? AND platform = ?",
+                        [$retryCount, $result['error'], $pkId, $platform]
                     );
                     Database::execute(
                         "UPDATE planning_konten SET error_message = ?, retry_count = ?, updated_at = NOW() WHERE id = ?",
-                        [$result['error'], $retryCount, $item['planning_id']]
+                        [$result['error'], $retryCount, $pkId]
                     );
                 }
 
                 $failed++;
             }
 
-            
             $this->sendPostNotification($item, $result);
 
-            
             if (count($queue) > 1 && $processed < count($queue)) {
                 sleep($interval);
             }
@@ -438,11 +433,30 @@ class SchedulerController extends Controller
             'message' => "Diproses: {$processed}, Sukses: {$success}, Gagal: {$failed}",
             'processed' => $processed,
             'success_count' => $success,
-            'failed_count' => $failed,
+            'failed_count' => $failed
         ]);
     }
 
-    
+    private function updatePlatformStatus(string $planningId, string $platform, string $status, ?string $postId, ?string $errorMsg, int $retryCount = 0): void
+    {
+        $existing = Database::fetch(
+            "SELECT id FROM planning_konten_platform WHERE planning_konten_id = ? AND platform = ?",
+            [$planningId, $platform]
+        );
+
+        if ($existing) {
+            $sql = "UPDATE planning_konten_platform SET status = ?, platform_post_id = ?, error_message = ?, retry_count = ?, updated_at = NOW()";
+            $params = [$status, $postId, $errorMsg, $retryCount];
+
+            if ($status === 'success') {
+                $sql .= ", published_at = NOW()";
+            }
+            $sql .= " WHERE id = ?";
+            $params[] = $existing['id'];
+
+            Database::execute($sql, $params);
+        }
+    }
 
 
     public function retryAutoPost(string $id): void
@@ -450,6 +464,11 @@ class SchedulerController extends Controller
         Database::execute(
             "UPDATE scheduler_queue SET status = 'queued', retry_count = 0, error_message = NULL, scheduled_at = NOW() WHERE id = ? AND status IN ('failed', 'retry')",
             [$id]
+        );
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'retry', 'scheduler', 'scheduler_queue', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), (int)$id, 'Retry posting antrian #' . $id, $_SERVER['REMOTE_ADDR']]
         );
         $this->json(['success' => true, 'message' => 'Posting akan dicoba ulang']);
     }
@@ -463,6 +482,11 @@ class SchedulerController extends Controller
             $this->json(['success' => false, 'message' => 'Token CSRF tidak valid'], 403);
         }
         Database::execute("UPDATE scheduler_queue SET status = 'cancelled' WHERE id = ?", [$id]);
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'cancel', 'scheduler', 'scheduler_queue', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), (int)$id, 'Jadwal antrian #' . $id . ' dibatalkan', $_SERVER['REMOTE_ADDR']]
+        );
         $this->json(['success' => true, 'message' => 'Jadwal dibatalkan.']);
     }
 
@@ -475,6 +499,11 @@ class SchedulerController extends Controller
         Database::execute(
             "UPDATE scheduler_queue SET scheduled_at = NOW(), priority = 999 WHERE id = ?",
             [$id]
+        );
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'run_now', 'scheduler', 'scheduler_queue', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), (int)$id, 'Posting antrian #' . $id . ' dijalankan sekarang', $_SERVER['REMOTE_ADDR']]
         );
         $this->redirectWith('/scheduler', 'success', 'Posting akan segera diproses.');
     }
@@ -588,15 +617,24 @@ class SchedulerController extends Controller
                 require_once SERVICES_PATH . 'FacebookService.php';
                 $service = new FacebookService();
                 if (!empty($mediaUrl) && (str_contains($mediaUrl, '.mp4') || str_contains($mediaUrl, '.mov'))) {
-                    return $service->publishVideo($account['account_id'], $accessToken, $mediaUrl, $fullCaption);
+                    return $service->publishVideo($account['account_id'], $accessToken, $mediaUrl, $fullCaption, $fullCaption);
                 } elseif (!empty($mediaUrl)) {
-                    return $service->publishPhoto($account['account_id'], $accessToken, $mediaUrl, $fullCaption);
+                    return $service->publishImage($account['account_id'], $accessToken, $mediaUrl, $fullCaption);
                 }
-                return $service->publishFeed($account['account_id'], $accessToken, $fullCaption);
+                return $service->publishText($account['account_id'], $accessToken, $fullCaption);
             } elseif ($platformSlug === 'instagram') {
                 require_once SERVICES_PATH . 'InstagramService.php';
                 $service = new InstagramService();
-                return $service->publishMedia($account['account_id'], $accessToken, $mediaUrl, $fullCaption, 'video');
+                if (empty($mediaUrl)) {
+                    return ['success' => false, 'error' => 'Instagram membutuhkan media (gambar atau video) untuk posting.'];
+                }
+                $mediaType = $planning['media_type'] ?? 'image';
+                if (in_array($mediaType, ['image', 'carousel'])) {
+                    return $service->publishImage($account['account_id'], $accessToken, $mediaUrl, $fullCaption);
+                } elseif (in_array($mediaType, ['video', 'reels', 'shorts', 'story'])) {
+                    return $service->publishVideo($account['account_id'], $accessToken, $mediaUrl, $fullCaption);
+                }
+                return ['success' => false, 'error' => 'Tipe media tidak didukung oleh Instagram: ' . $mediaType];
             } elseif ($platformSlug === 'tiktok') {
                 require_once SERVICES_PATH . 'TikTokService.php';
                 $service = new TikTokService();

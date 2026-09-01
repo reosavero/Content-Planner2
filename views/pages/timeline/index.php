@@ -604,6 +604,52 @@ $stats = $stats ?? ['total' => 0, 'selesai' => 0, 'publish' => 0, 'proses' => 0,
 }
 .format-pill-btn.selected .icon-add { display: none !important; }
 .format-pill-btn.selected .icon-check { display: inline-block !important; }
+[data-theme="dark"] .format-pill-btn {
+    background: var(--surface-secondary) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
+}
+[data-theme="dark"] .format-pill-btn:hover {
+    background: var(--surface-hover) !important;
+    border-color: var(--border-focus) !important;
+}
+[data-theme="dark"] .format-pill-btn.selected {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2f54eb 100%) !important;
+    border-color: #2f54eb !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(47, 84, 235, 0.35) !important;
+}
+[data-theme="dark"] .multi-format-container {
+    background: var(--surface-tertiary) !important;
+    border-color: var(--border) !important;
+}
+
+
+/* ===== Dark mode ===== */
+[data-theme="dark"] .task-card .task-meta .meta-item { color: var(--text-tertiary) !important; }
+[data-theme="dark"] .task-card .task-links a { background: rgba(63, 81, 181, 0.25) !important; color: #a5b4fc !important; }
+[data-theme="dark"] .task-card .task-links a:hover { background: rgba(63, 81, 181, 0.4) !important; }
+[data-theme="dark"] .task-card .task-catatan { background: var(--surface-tertiary) !important; color: var(--text-primary) !important; border-left-color: #60a5fa !important; }
+[data-theme="dark"] .status-select { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text-primary) !important; }
+[data-theme="dark"] .empty-state { color: var(--text-tertiary) !important; }
+[data-theme="dark"] .empty-state i { color: var(--border) !important; }
+[data-theme="dark"] .empty-state h4 { color: var(--text-secondary) !important; }
+[data-theme="dark"] .modal-header h3 { color: #a5b4fc !important; }
+[data-theme="dark"] .form-group label { color: var(--text-primary) !important; }
+[data-theme="dark"] .btn-primary { background: #283593 !important; }
+[data-theme="dark"] .btn-primary:hover { background: #3f51b5 !important; }
+[data-theme="dark"] .btn-outline { color: var(--text-secondary) !important; border-color: var(--border) !important; }
+[data-theme="dark"] .btn-outline:hover { background: var(--surface-hover) !important; border-color: var(--border) !important; }
+[data-theme="dark"] .month-nav h2 { color: #a5b4fc !important; }
+[data-theme="dark"] .month-nav .nav-btn { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text-secondary) !important; }
+[data-theme="dark"] .month-nav .nav-btn:hover { background: var(--surface-hover) !important; border-color: var(--border) !important; }
+[data-theme="dark"] .file-info { color: var(--text-secondary) !important; }
+[data-theme="dark"] .file-info a { color: #93c5fd !important; }
+[data-theme="dark"] .detail-label { color: var(--text-tertiary) !important; }
+[data-theme="dark"] .detail-value { color: var(--text-primary) !important; }
+[data-theme="dark"] .detail-value a { color: #93c5fd !important; }
+[data-theme="dark"] .modal-close { background: var(--surface-hover) !important; color: var(--text-secondary) !important; }
+[data-theme="dark"] .modal-close:hover { background: var(--surface-hover) !important; color: var(--text-primary) !important; }
 </style>
 
 
@@ -784,7 +830,7 @@ $stats = $stats ?? ['total' => 0, 'selesai' => 0, 'publish' => 0, 'proses' => 0,
     <div class="modal-content">
         <form method="POST" action="" id="formTask" enctype="multipart/form-data" style="margin:0;">
             <div class="modal-header">
-                <h3 id="modalTaskTitle">Tambah Task Baru</h3>
+                <h3 id="modalTaskTitle" style="display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin: 0;"><i class="bi bi-plus-circle" style="color: var(--tvri-blue, #003399); font-size: 20px; flex-shrink: 0;"></i><span>Tambah Task Harian</span></h3>
                 <button type="button" class="modal-close" onclick="closeModal('modalTask')">&times;</button>
             </div>
             <div class="modal-body">
@@ -809,7 +855,7 @@ $stats = $stats ?? ['total' => 0, 'selesai' => 0, 'publish' => 0, 'proses' => 0,
 
                     <div class="multi-format-container" id="timelineMultiFormatContainer">
                         <?php
-                        $formatOptions = ['Feed', 'Reels', 'Reels Berita', 'Story', 'Thumbnail', 'Flyer/Poster', 'Take Video', 'Skrip / Materi', 'Teresterial', 'Carousel', 'Single Post', 'Image'];
+                        $formatOptions = ['Feed', 'Reels', 'Reels Berita', 'Story', 'Thumbnail', 'Flyer/Poster', 'Take Video', 'Skrip / Materi', 'YouTube', 'Image'];
                         foreach ($formatOptions as $fmt):
                         ?>
                             <button type="button" class="format-pill-btn" data-value="<?= htmlspecialchars($fmt) ?>" onclick="toggleTimelineFormatPill(this, event)">
@@ -1024,7 +1070,7 @@ document.addEventListener('DOMContentLoaded', function() {
             form.action = '<?= BASE_URL ?>/timeline/store';
 
             if (mode === 'edit' && taskId) {
-                document.getElementById('modalTaskTitle').textContent = 'Edit Task';
+                document.getElementById('modalTaskTitle').innerHTML = '<i class="bi bi-pencil-square" style="color: var(--tvri-blue, #003399); font-size: 20px; margin-right: 10px; flex-shrink: 0;"></i><span>Edit Task Konten</span>';
                 document.getElementById('taskAction').value = 'update';
                 document.getElementById('btnSubmitTask').textContent = 'Update';
                 form.action = '<?= BASE_URL ?>/timeline/update/' + taskId;
@@ -1062,7 +1108,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     })
                     .catch(function() {});
             } else {
-                document.getElementById('modalTaskTitle').textContent = 'Tambah Task Baru';
+                document.getElementById('modalTaskTitle').innerHTML = '<i class="bi bi-plus-circle" style="color: var(--tvri-blue, #003399); font-size: 20px; margin-right: 10px; flex-shrink: 0;"></i><span>Tambah Task Harian</span>';
                 document.getElementById('taskAction').value = 'store';
                 document.getElementById('btnSubmitTask').textContent = 'Simpan';
                 form.action = '<?= BASE_URL ?>/timeline/store';

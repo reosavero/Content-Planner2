@@ -33,7 +33,13 @@ class UploadController extends Controller
         if ($result['success']) {
             
             $thumbnailPath = $this->generateThumbnail($result['path'], $result['filename']);
-            
+
+            Database::execute(
+                "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+                 VALUES (?, ?, 'upload', 'upload', NULL, NULL, ?, ?)",
+                [Session::get('user_id'), Session::get('user_role_id'), 'Upload gambar: ' . $result['filename'], $_SERVER['REMOTE_ADDR']]
+            );
+
             $this->success([
                 'url' => BASE_URL . '/uploads/' . $result['path'],
                 'thumbnail' => $thumbnailPath ? BASE_URL . '/uploads/' . $thumbnailPath : null,
@@ -64,6 +70,12 @@ class UploadController extends Controller
 
         $result = $this->processUpload($file, 'videos');
         if ($result['success']) {
+            Database::execute(
+                "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+                 VALUES (?, ?, 'upload', 'upload', NULL, NULL, ?, ?)",
+                [Session::get('user_id'), Session::get('user_role_id'), 'Upload video: ' . $result['filename'], $_SERVER['REMOTE_ADDR']]
+            );
+
             $this->success([
                 'url' => BASE_URL . '/uploads/' . $result['path'],
                 'filename' => $result['filename'],
@@ -92,6 +104,12 @@ class UploadController extends Controller
 
         $result = $this->processUpload($file, 'thumbnails');
         if ($result['success']) {
+            Database::execute(
+                "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+                 VALUES (?, ?, 'upload', 'upload', NULL, NULL, ?, ?)",
+                [Session::get('user_id'), Session::get('user_role_id'), 'Upload thumbnail: ' . $result['filename'], $_SERVER['REMOTE_ADDR']]
+            );
+
             $this->success([
                 'url' => BASE_URL . '/uploads/' . $result['path'],
                 'filename' => $result['filename'],
@@ -125,6 +143,12 @@ class UploadController extends Controller
 
         $result = $this->processUpload($file, $subdir);
         if ($result['success']) {
+            Database::execute(
+                "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+                 VALUES (?, ?, 'upload', 'upload', NULL, NULL, ?, ?)",
+                [Session::get('user_id'), Session::get('user_role_id'), 'Upload file: ' . $result['filename'], $_SERVER['REMOTE_ADDR']]
+            );
+
             $this->success([
                 'url' => BASE_URL . '/uploads/' . $result['path'],
                 'filename' => $result['filename'],

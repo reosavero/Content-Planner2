@@ -12,7 +12,9 @@ class RegisterController extends Controller
     public function showRegisterForm(): void
     {
         if (Session::isLoggedIn()) {
-            $this->redirect('/dashboard');
+            $userRole = Session::get('user_role_slug');
+            $landing = in_array($userRole, ['superadmin', 'admin'], true) ? '/planning' : '/dashboard';
+            $this->redirect($landing);
             return;
         }
 
@@ -147,10 +149,12 @@ class RegisterController extends Controller
             $password = $_POST['password'] ?? '';
             $passwordConfirm = $_POST['password_confirm'] ?? '';
 
+            $isSuperAdminCreating = (Session::isLoggedIn() && Session::get('user_role_slug') === 'superadmin');
+
             $email = Session::get('otp_verified_email') ?: Security::sanitize($_POST['email'] ?? '');
 
             if (empty($email)) {
-                $this->json(['success' => false, 'message' => 'Sesi verifikasi OTP tidak ditemukan. Silakan ulang dari awal.'], 422);
+                $this->json(['success' => false, 'message' => 'Sesi pendaftaran atau email tidak ditemukan.'], 422);
                 return;
             }
 
@@ -182,28 +186,33 @@ class RegisterController extends Controller
                 return;
             }
 
-            
-            $otpRecord = Database::fetch(
-                "SELECT * FROM otp_verifications WHERE email = ? AND is_verified = 1 ORDER BY id DESC LIMIT 1",
-                [$email]
-            );
+            if ($isSuperAdminCreating) {
+                $name = Security::sanitize($_POST['name'] ?? '');
+                $jurusan = Security::sanitize($_POST['jurusan'] ?? '');
+                $phone = Security::sanitize($_POST['phone'] ?? '');
+            } else {
+                $otpRecord = Database::fetch(
+                    "SELECT * FROM otp_verifications WHERE email = ? AND is_verified = 1 ORDER BY id DESC LIMIT 1",
+                    [$email]
+                );
 
-            if (!$otpRecord) {
-                $this->json(['success' => false, 'message' => 'Sesi verifikasi OTP telah kadaluarsa. Silakan ulangi pendaftaran.'], 422);
-                return;
+                if (!$otpRecord) {
+                    $this->json(['success' => false, 'message' => 'Sesi verifikasi OTP telah kadaluarsa. Silakan ulangi pendaftaran.'], 422);
+                    return;
+                }
+
+                $payload = json_decode($otpRecord['payload'] ?? '{}', true);
+                $name = $payload['name'] ?? 'User Magang';
+                $jurusan = $payload['jurusan'] ?? '';
+                $phone = $payload['phone'] ?? '';
             }
-
-            $payload = json_decode($otpRecord['payload'] ?? '{}', true);
-            $name = $payload['name'] ?? 'User Magang';
-            $jurusan = $payload['jurusan'] ?? '';
-            $phone = $payload['phone'] ?? '';
 
             $targetRole = Security::sanitize($_POST['target_role'] ?? '');
             $userRoleSlug = Session::get('user_role_slug');
 
-            if ($targetRole === 'admin' && Session::isLoggedIn() && $userRoleSlug === 'superadmin') {
-                $role = Database::fetch("SELECT id FROM roles WHERE slug = 'admin'");
-                $roleId = $role['id'] ?? 2;
+            if (in_array($targetRole, ['admin', 'superadmin'], true) && Session::isLoggedIn() && $userRoleSlug === 'superadmin') {
+                $role = Database::fetch("SELECT id FROM roles WHERE slug IN ('{$targetRole}', 'super_admin') LIMIT 1");
+                $roleId = $role['id'] ?? ($targetRole === 'superadmin' ? 1 : 2);
                 $approvalStatus = 'approved';
                 $isActive = 1;
             } else {
@@ -245,6 +254,36 @@ class RegisterController extends Controller
             if (!$userId) {
                 $this->json(['success' => false, 'message' => 'Gagal membuat akun user. Silakan coba lagi.'], 500);
                 return;
+            }
+
+            Database::execute(
+                "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+                 VALUES (?, ?, 'register', 'auth', 'users', ?, ?, ?)",
+                [$userId, $roleId, $userId, 'Registrasi akun baru: ' . $name . ' (' . $email . ')', $_SERVER['REMOTE_ADDR']]
+            );
+
+            
+            if ($approvalStatus === 'pending') {
+                try {
+                    require_once HELPERS_PATH . 'Notification.php';
+                    $admins = Database::fetchAll(
+                        "SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id 
+                         WHERE r.slug IN ('admin', 'superadmin') AND u.is_active = 1 AND u.deleted_at IS NULL"
+                    );
+                    $adminIds = array_values(array_unique(array_map('intval', array_column($admins, 'id'))));
+                    if (!empty($adminIds)) {
+                        Notification::createBulk(
+                            $adminIds,
+                            'Pendaftaran magang baru',
+                            "Magang baru \"{$name}\" ({$email}) telah mendaftar.",
+                            'warning',
+                            '/intern-users',
+                            'bi-person-plus'
+                        );
+                    }
+                } catch (\Throwable $e) {
+                    error_log('Notifikasi pendaftaran magang gagal: ' . $e->getMessage());
+                }
             }
 
             

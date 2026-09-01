@@ -263,10 +263,247 @@ class SocialMediaController extends Controller
         $this->connect($platform);
     }
 
-    
+    public function publishMulti(string $id): void
+    {
+        if (!Session::validateCsrfToken($_POST[CSRF_TOKEN_NAME] ?? '')) {
+            $this->json(['success' => false, 'message' => 'Token CSRF tidak valid'], 403);
+            return;
+        }
 
+        $roleSlug = Session::get('user_role_slug');
+        if ($roleSlug !== 'superadmin' && $roleSlug !== 'admin') {
+            $this->json(['success' => false, 'message' => 'Hanya Admin / Superadmin yang dapat Publish Multi-Platform.'], 403);
+            return;
+        }
 
-    private function saveConnectedAccount(string $platform, array $acc): void
+        $planning = Database::fetch(
+            "SELECT pk.* FROM planning_konten pk WHERE pk.id = ? AND pk.deleted_at IS NULL",
+            [$id]
+        );
+
+        if (!$planning) {
+            $this->json(['success' => false, 'message' => 'Konten tidak ditemukan.'], 404);
+            return;
+        }
+
+        if (!in_array($planning['status'], ['approved', 'scheduled'], true)) {
+            $this->json(['success' => false, 'message' => 'Konten harus status Approved atau Scheduled. Saat ini: ' . $planning['status']], 400);
+            return;
+        }
+
+        // Ambil platform target dari planning_konten_platform
+        $targetPlatforms = Database::fetchAll(
+            "SELECT pkp.* FROM planning_konten_platform pkp WHERE pkp.planning_konten_id = ? AND pkp.status IN ('pending', 'failed')",
+            [$id]
+        );
+
+        if (empty($targetPlatforms)) {
+            $this->json(['success' => false, 'message' => 'Tidak ada platform target yang valid untuk dipublish.'], 400);
+            return;
+        }
+
+        $results = [];
+        $overallSuccess = true;
+
+        foreach ($targetPlatforms as $tp) {
+            $platform = $tp['platform'];
+            
+            // Get platform info
+            $platformData = Database::fetch("SELECT id, name FROM platform_sosmed WHERE slug = ?", [$platform]);
+            if (!$platformData) {
+                $results[$platform] = ['success' => false, 'error' => 'Platform tidak terdaftar'];
+                $overallSuccess = false;
+                continue;
+            }
+
+            // Get connected account
+            $account = Database::fetch(
+                "SELECT * FROM platform_akun WHERE platform_id = ? AND is_connected = 1 AND is_active = 1 AND token_status = 'active'",
+                [$platformData['id']]
+            );
+
+            if (!$account) {
+                $results[$platform] = ['success' => false, 'error' => 'Akun tidak terhubung'];
+                $overallSuccess = false;
+                $this->updatePlatformStatus($id, $platform, 'failed', null, 'Akun tidak terhubung');
+                continue;
+            }
+
+            $accessToken = Security::decrypt($account['access_token']);
+            if (empty($accessToken)) {
+                $results[$platform] = ['success' => false, 'error' => 'Token tidak valid'];
+                $overallSuccess = false;
+                $this->updatePlatformStatus($id, $platform, 'failed', null, 'Token tidak valid');
+                continue;
+            }
+
+            // Check token expiry & refresh
+            if (!empty($account['token_expires_at']) && strtotime($account['token_expires_at']) < time()) {
+                require_once HELPERS_PATH . 'SocialMediaAPI.php';
+                $refreshResult = SocialMediaAPI::refreshToken($account);
+                if ($refreshResult['success']) {
+                    $accessToken = $refreshResult['access_token'] ?? Security::decrypt(Database::fetchColumn("SELECT access_token FROM platform_akun WHERE id = ?", [$account['id']]));
+                } else {
+                    Database::execute("UPDATE platform_akun SET token_status = 'expired' WHERE id = ?", [$account['id']]);
+                    $results[$platform] = ['success' => false, 'error' => 'Token expired & gagal refresh'];
+                    $overallSuccess = false;
+                    $this->updatePlatformStatus($id, $platform, 'failed', null, 'Token expired');
+                    continue;
+                }
+            }
+
+            // Prepare content
+            $caption = trim($planning['caption'] ?? '');
+            $hashtag = trim($planning['hashtag_text'] ?? '');
+            $fullCaption = $caption . ($hashtag ? "\n\n" . $hashtag : '');
+            $mediaType = $planning['media_type'] ?? 'text';
+            
+            // Build media URL
+            $mediaUrl = null;
+            $localPath = null;
+            if (!empty($planning['media_path'])) {
+                $rawPath = $planning['media_path'];
+                if (preg_match('/uploads\/(.+)$/i', $rawPath, $m)) {
+                    $relPath = $m[1];
+                } else {
+                    $relPath = ltrim($rawPath, '/');
+                }
+                $localPath = UPLOADS_PATH . $relPath;
+                if (file_exists($localPath)) {
+                    $mediaUrl = BASE_URL . '/uploads/' . ltrim($planning['media_path'], '/');
+                }
+            }
+
+            // Execute publish per platform
+            $startTime = microtime(true);
+            $result = ['success' => false, 'error' => 'Platform belum didukung'];
+
+            try {
+                if ($platform === 'facebook') {
+                    require_once SERVICES_PATH . 'FacebookService.php';
+                    $service = new FacebookService();
+                    $result = $this->executeFacebookPublish($service, $account, $accessToken, $fullCaption, $mediaUrl, $mediaType);
+                } elseif ($platform === 'instagram') {
+                    require_once SERVICES_PATH . 'InstagramService.php';
+                    $service = new InstagramService();
+                    $result = $this->executeInstagramPublish($service, $account, $accessToken, $fullCaption, $mediaUrl, $mediaType);
+                } elseif ($platform === 'tiktok') {
+                    require_once SERVICES_PATH . 'TikTokService.php';
+                    $service = new TikTokService();
+                    $targetVideo = ($localPath && file_exists($localPath)) ? $localPath : $mediaUrl;
+                    $result = $service->publishVideo($account['account_id'], $accessToken, $targetVideo, $fullCaption);
+                } elseif ($platform === 'youtube') {
+                    require_once SERVICES_PATH . 'YouTubeService.php';
+                    $service = new YouTubeService();
+                    $targetVideo = ($localPath && file_exists($localPath)) ? $localPath : $mediaUrl;
+                    $result = $service->publishVideo($account['account_id'], $accessToken, $targetVideo, $planning['judul'], $fullCaption);
+                }
+            } catch (\Throwable $e) {
+                $result = ['success' => false, 'error' => 'Exception: ' . $e->getMessage()];
+            }
+
+            $durationMs = (int)((microtime(true) - $startTime) * 1000);
+            $retryCount = ($tp['retry_count'] ?? 0) + 1;
+
+            if ($result['success']) {
+                $postId = $result['post_id'] ?? null;
+                $postUrl = $result['post_url'] ?? null;
+                
+                $this->updatePlatformStatus($id, $platform, 'success', $postId, null);
+                
+                Database::execute(
+                    "UPDATE planning_konten SET status = 'success', posted_at = NOW(), post_id_platform = ?, post_url = ? WHERE id = ?",
+                    [$postId, $postUrl, $id]
+                );
+                
+                $this->insertPostLog($id, $account['id'], 'posting', 'success', null, 200, null, $durationMs);
+                $results[$platform] = ['success' => true, 'post_id' => $postId, 'post_url' => $postUrl];
+            } else {
+                $errorMsg = $result['error'] ?? 'Unknown error';
+                $httpCode = $result['http_code'] ?? null;
+                
+                $this->updatePlatformStatus($id, $platform, 'failed', null, $errorMsg, $retryCount);
+                $this->insertPostLog($id, $account['id'], 'posting', 'failed', $errorMsg, $httpCode, null, $durationMs);
+                $results[$platform] = ['success' => false, 'error' => $errorMsg];
+                $overallSuccess = false;
+            }
+        }
+
+        $this->logActivity('publish_multi', "Publish Multi-Platform Planning #{$id}. Results: " . json_encode($results));
+
+        $this->json([
+            'success' => $overallSuccess,
+            'message' => $overallSuccess ? 'Berhasil publish ke semua platform!' : 'Beberapa platform gagal dipublish.',
+            'results' => $results
+        ]);
+    }
+
+    private function executeFacebookPublish($service, $account, $accessToken, $caption, $mediaUrl, $mediaType): array
+    {
+        if ($mediaType === 'video' || $mediaType === 'reels') {
+            return $service->publishVideo($account['account_id'], $accessToken, $mediaUrl, $caption);
+        } elseif ($mediaType === 'image' || $mediaType === 'carousel') {
+            return $service->publishImage($account['account_id'], $accessToken, $mediaUrl, $caption);
+        } else {
+            return $service->publishText($account['account_id'], $accessToken, $caption);
+        }
+    }
+
+    private function executeInstagramPublish($service, $account, $accessToken, $caption, $mediaUrl, $mediaType): array
+    {
+        // Instagram needs Instagram Business Account ID
+        $igAccountId = $account['account_id'];
+        
+        if ($mediaType === 'video' || $mediaType === 'reels') {
+            return $service->publishVideo($igAccountId, $accessToken, $mediaUrl, $caption);
+        } elseif ($mediaType === 'image' || $mediaType === 'carousel') {
+            return $service->publishImage($igAccountId, $accessToken, $mediaUrl, $caption);
+        } else {
+            return ['success' => false, 'error' => 'Instagram memerlukan media (image/video)'];
+        }
+    }
+
+    private function updatePlatformStatus(string $planningId, string $platform, string $status, ?string $postId, ?string $errorMsg, int $retryCount = 0): void
+    {
+        $existing = Database::fetch(
+            "SELECT id FROM planning_konten_platform WHERE planning_konten_id = ? AND platform = ?",
+            [$planningId, $platform]
+        );
+
+        if ($existing) {
+            $sql = "UPDATE planning_konten_platform SET status = ?, platform_post_id = ?, error_message = ?, retry_count = ?, updated_at = NOW()";
+            $params = [$status, $postId, $errorMsg, $retryCount];
+
+            if ($status === 'success') {
+                $sql .= ", published_at = NOW()";
+            }
+            $sql .= " WHERE id = ?";
+            $params[] = $existing['id'];
+
+            Database::execute($sql, $params);
+        }
+    }
+
+    private function insertPostLog(string $planningId, string $akunId, string $action, string $status, ?string $errorMsg, ?int $httpCode, ?string $requestData = null, ?int $durationMs = null): void
+    {
+        Database::execute(
+            "INSERT INTO posting_logs (planning_id, platform_akun_id, action, status, error_message, http_code, ip_address, performed_by, duration_ms, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+            [
+                $planningId,
+                $akunId,
+                $action,
+                $status,
+                $errorMsg,
+                $httpCode,
+                $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                Session::get('user_id'),
+                $durationMs
+            ]
+        );
+    }
+
+        private function saveConnectedAccount(string $platform, array $acc): void
     {
         $platformData = Database::fetch("SELECT id FROM platform_sosmed WHERE slug = ?", [$platform]);
         if (!$platformData) return;

@@ -398,9 +398,16 @@ class PlanningController extends Controller
             $this->redirectBackWith('error', 'Token CSRF tidak valid. Silakan coba lagi.');
         }
 
+        // Get platform_ids from checkboxes
+        $selectedPlatformIds = $_POST['platform_ids'] ?? [];
+        if (empty($selectedPlatformIds) || !is_array($selectedPlatformIds)) {
+            $this->redirectBackWith('error', 'Pilih minimal satu platform sosmed!');
+        }
+        $primaryPlatformId = $selectedPlatformIds[0]; // First selected as primary
+
         $data = $this->validate($_POST, [
             'judul' => 'required|min:3|max:255',
-            'platform_id' => 'required|numeric',
+            'platform_id' => 'required|numeric', // kept for backward compat (hidden field synced via JS)
             'kategori_id' => 'required|numeric',
             'program_id' => 'numeric',
             'jenis_konten_id' => 'numeric',
@@ -440,7 +447,7 @@ class PlanningController extends Controller
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
                 [
                     $data['judul'], $data['slug'], $programId, $data['kategori_id'], 
-                    $jenisKontenId, $data['platform_id'], $data['caption'] ?? '', 
+                    $jenisKontenId, $primaryPlatformId, $data['caption'] ?? '', 
                     $data['hashtag_text'] ?? '', $data['media_type'] ?? 'image',
                     $data['tanggal_posting'] ?? $data['scheduled_at'], $data['jam_posting'] ?? '00:00',
                     $data['scheduled_at'], $data['status'], $data['priority'] ?? 'medium',
@@ -448,6 +455,25 @@ class PlanningController extends Controller
                     $deadline, $data['catatan'] ?? '', Session::get('user_id')
                 ]
             );
+
+            // Save to planning_konten_platform (pivot table)
+            foreach ($selectedPlatformIds as $pid) {
+                $pData = Database::fetch("SELECT slug FROM platform_sosmed WHERE id = ?", [$pid]);
+                if (!$pData) continue;
+                
+                $acc = Database::fetch(
+                    "SELECT id FROM platform_akun WHERE platform_id = ? AND is_connected = 1 AND is_active = 1 AND token_status = 'active'",
+                    [$pid]
+                );
+                $status = $acc ? 'pending' : 'failed';
+                $errorMsg = $acc ? null : 'Akun ' . ucfirst($pData['slug']) . ' belum terhubung';
+                
+                Database::execute(
+                    "INSERT INTO planning_konten_platform (planning_konten_id, platform, status, error_message, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, NOW(), NOW())",
+                    [$planningId, $pData['slug'], $status, $errorMsg]
+                );
+            }
 
             
             if (!empty($_POST['tags'])) {
@@ -609,9 +635,16 @@ class PlanningController extends Controller
             $this->redirectWith('/planning', 'error', 'Planning tidak ditemukan.');
         }
 
+        // Get platform_ids from checkboxes
+        $selectedPlatformIds = $_POST['platform_ids'] ?? [];
+        if (empty($selectedPlatformIds) || !is_array($selectedPlatformIds)) {
+            $this->redirectBackWith('error', 'Pilih minimal satu platform sosmed!');
+        }
+        $primaryPlatformId = $selectedPlatformIds[0]; // First selected as primary
+
         $data = $this->validate($_POST, [
             'judul' => 'required|min:3|max:255',
-            'platform_id' => 'required|numeric',
+            'platform_id' => 'required|numeric', // kept for backward compat
             'kategori_id' => 'required|numeric',
             'caption' => 'max:5000',
             'hashtag_text' => 'max:1000',
@@ -640,7 +673,7 @@ class PlanningController extends Controller
              WHERE id = ?",
             [
                 $data['judul'], $programId, $data['kategori_id'], 
-                $jenisKontenId, $data['platform_id'],
+                $jenisKontenId, $primaryPlatformId,
                 $data['caption'] ?? '', $data['hashtag_text'] ?? '', $data['media_type'] ?? 'image',
                 $tanggalPosting,
                 $jamPosting,
@@ -650,6 +683,69 @@ class PlanningController extends Controller
                 $deadline, $data['catatan'] ?? '', $id
             ]
         );
+
+        // Update planning_konten_platform (pivot table)
+        // First, get existing platforms
+        $existingPlatforms = Database::fetchAll(
+            "SELECT platform FROM planning_konten_platform WHERE planning_konten_id = ?",
+            [$id]
+        );
+        $existingSlugs = array_column($existingPlatforms, 'platform');
+
+        foreach ($selectedPlatformIds as $pid) {
+            $pData = Database::fetch("SELECT slug FROM platform_sosmed WHERE id = ?", [$pid]);
+            if (!$pData) continue;
+            
+            $platformSlug = $pData['slug'];
+            $acc = Database::fetch(
+                "SELECT id FROM platform_akun WHERE platform_id = ? AND is_connected = 1 AND is_active = 1 AND token_status = 'active'",
+                [$pid]
+            );
+            $status = $acc ? 'pending' : 'failed';
+            $errorMsg = $acc ? null : 'Akun ' . ucfirst($platformSlug) . ' belum terhubung';
+            
+            if (in_array($platformSlug, $existingSlugs)) {
+                // Update existing - keep status if already success, otherwise reset to pending/failed
+                $existing = Database::fetch(
+                    "SELECT status FROM planning_konten_platform WHERE planning_konten_id = ? AND platform = ?",
+                    [$id, $platformSlug]
+                );
+                if ($existing && $existing['status'] === 'success') {
+                    // Don't overwrite success status
+                    continue;
+                }
+                Database::execute(
+                    "UPDATE planning_konten_platform SET status = ?, error_message = ?, updated_at = NOW()
+                     WHERE planning_konten_id = ? AND platform = ?",
+                    [$status, $errorMsg, $id, $platformSlug]
+                );
+            } else {
+                // Insert new
+                Database::execute(
+                    "INSERT INTO planning_konten_platform (planning_konten_id, platform, status, error_message, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, NOW(), NOW())",
+                    [$id, $platformSlug, $status, $errorMsg]
+                );
+            }
+        }
+
+        // Remove platforms that were unchecked (only if not already published)
+        foreach ($existingSlugs as $slug) {
+            if (!in_array($slug, array_column(
+                Database::fetchAll("SELECT slug FROM platform_sosmed WHERE id IN (" . implode(',', array_fill(0, count($selectedPlatformIds), '?')) . ")", $selectedPlatformIds), 'slug'
+            ))) {
+                $existing = Database::fetch(
+                    "SELECT status FROM planning_konten_platform WHERE planning_konten_id = ? AND platform = ?",
+                    [$id, $slug]
+                );
+                if ($existing && $existing['status'] !== 'success') {
+                    Database::execute(
+                        "DELETE FROM planning_konten_platform WHERE planning_konten_id = ? AND platform = ?",
+                        [$id, $slug]
+                    );
+                }
+            }
+        }
 
         
         Database::execute("DELETE FROM planning_tags WHERE planning_id = ?", [$id]);
@@ -772,6 +868,17 @@ class PlanningController extends Controller
             default:
                 $this->json(['success' => false, 'message' => 'Aksi tidak dikenali']);
         }
+
+        $logAction = $action === 'delete' ? 'delete' : 'submit_review';
+        $logDescription = $action === 'delete'
+            ? count($ids) . ' planning dihapus (bulk action)'
+            : count($ids) . ' planning dikirim ke review (bulk action)';
+
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, ?, 'planning', NULL, NULL, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), $logAction, $logDescription, $_SERVER['REMOTE_ADDR']]
+        );
 
         $this->json(['success' => true, 'message' => $message]);
     }

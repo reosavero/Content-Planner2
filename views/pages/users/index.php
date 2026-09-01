@@ -41,12 +41,12 @@ $pagination = $pagination ?? [];
                                     </div>
                                 </td>
                                 <td style="font-size: var(--text-sm);"><?= htmlspecialchars($user['username'] ?? '') ?></td>
-                                <td><span class="badge badge-primary"><?= htmlspecialchars($user['role_name'] ?? '') ?></span></td>
+                                <td><span class="badge-status assigned"><i class="bi bi-person-badge"></i> <?= htmlspecialchars($user['role_name'] ?? '') ?></span></td>
                                 <td>
                                     <?php if (!empty($user['is_active'])): ?>
-                                        <span class="badge badge-success">Active</span>
+                                        <span class="badge-status approved"><i class="bi bi-check-circle-fill"></i> Active</span>
                                     <?php else: ?>
-                                        <span class="badge badge-danger">Inactive</span>
+                                        <span class="badge-status revision"><i class="bi bi-x-circle-fill"></i> Inactive</span>
                                     <?php endif; ?>
                                 </td>
                                 <td style="font-size: var(--text-sm);"><?= number_format($user['total_planning'] ?? 0) ?></td>
@@ -107,6 +107,26 @@ $pagination = $pagination ?? [];
         </div>
     </div>
 </div>
+
+<style>
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.badge-status.pending { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+.badge-status.approved { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.badge-status.revision { background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
+.badge-status.assigned { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.badge-status.progress { background: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+.badge-status.selesai { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+</style>
 
 <script>
 var targetUserDeleteId = null;

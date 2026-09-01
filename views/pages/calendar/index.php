@@ -39,25 +39,89 @@ $users = $users ?? [];
     .calendar-page-card .card-body {
         animation: calendarBodyIn 0.6s ease-out 0.3s both;
     }
-    .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 700 !important; }
-    .fc-button-primary {
+    /* FullCalendar Toolbar & Navigation Button Styling */
+    .fc .fc-toolbar {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        margin-bottom: 1.25rem !important;
+    }
+    .fc-toolbar-title {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        color: var(--text-primary);
+    }
+    .fc .fc-button-primary {
         background: var(--tvri-blue) !important;
         border-color: var(--tvri-blue) !important;
         font-family: var(--font-body) !important;
         font-size: 0.8125rem !important;
-        padding: 6px 16px !important;
+        font-weight: 600 !important;
+        height: 36px !important;
+        padding: 0 14px !important;
         border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 2px 4px rgba(0, 51, 153, 0.15) !important;
+        transition: all 0.2s ease !important;
     }
-    .fc-button-primary:hover { background: var(--tvri-blue-600) !important; }
-    .fc-button-primary:disabled { opacity: 0.5 !important; }
-
+    .fc .fc-button-primary:hover {
+        background: var(--tvri-blue-600) !important;
+        border-color: var(--tvri-blue-600) !important;
+    }
+    .fc .fc-button-primary:disabled {
+        opacity: 0.5 !important;
+    }
     .fc .fc-button:focus,
     .fc .fc-button:active:focus,
     .fc .fc-button:focus-visible {
         outline: none !important;
-        box-shadow: none !important;
+        box-shadow: 0 0 0 3px rgba(0, 51, 153, 0.2) !important;
     }
-    .fc .fc-button-group > .fc-button { margin: 0 2px !important; }
+    .fc .fc-button-group {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
+    .fc .fc-button-group > .fc-button {
+        margin: 0 !important;
+        border-radius: 8px !important;
+    }
+    .fc .fc-today-button {
+        margin-left: 8px !important;
+        margin-top: 0 !important;
+        border-radius: 8px !important;
+        text-transform: capitalize !important;
+    }
+
+    @media (max-width: 767px) {
+        .fc .fc-toolbar {
+            flex-direction: column-reverse !important;
+            align-items: center !important;
+            gap: 10px !important;
+            margin-bottom: 1rem !important;
+        }
+        .fc .fc-toolbar-chunk {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            flex-wrap: nowrap !important;
+            width: 100% !important;
+        }
+        .fc-toolbar-title {
+            font-size: 1.1rem !important;
+            text-align: center !important;
+        }
+        .fc .fc-today-button {
+            margin-left: 6px !important;
+            margin-top: 0 !important;
+            flex-shrink: 0 !important;
+        }
+    }
 
 
     .fc .fc-icon-custom-prev,
@@ -102,9 +166,9 @@ $users = $users ?? [];
     }
     .fc-day-today { background: var(--tvri-blue-50) !important; }
     [data-theme="dark"] .fc-day-today { background: rgba(0, 51, 153, 0.2) !important; }
-    [data-theme="dark"] .fc { background: var(--dark-surface-2); }
-    [data-theme="dark"] .fc td, [data-theme="dark"] .fc th { border-color: var(--dark-border); }
-    [data-theme="dark"] .fc-daygrid-day-number, [data-theme="dark"] .fc-col-header-cell-cushion { color: var(--dark-text); }
+    [data-theme="dark"] .fc { background: var(--surface-secondary); }
+    [data-theme="dark"] .fc td, [data-theme="dark"] .fc th { border-color: var(--border); }
+    [data-theme="dark"] .fc-daygrid-day-number, [data-theme="dark"] .fc-col-header-cell-cushion { color: var(--text-secondary); }
     .fc-theme-standard td, .fc-theme-standard th { border-color: var(--gray-200); }
 
     .calendar-legend {
@@ -160,30 +224,137 @@ $users = $users ?? [];
     .fc-event-popover.show { display: block; }
 
 
+    /* Tag noted di sel hari: netral, swatch kotak warna = warna noted */
     .day-memorial-note {
-        font-size: 8.5px;
-        font-weight: 600;
+        position: relative;
+        font-size: 10px;
+        font-weight: 500;
         line-height: 1.25;
-        color: #b91c1c;
-        background: #fef2f2;
-        border-left: 2px solid #dc2626;
-        border-radius: 3px;
-        padding: 1px 4px;
-        margin: 1px 3px;
+        color: #1e293b;
+        background: var(--surface, #ffffff);
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        padding: 3px 6px 3px 14px;
+        margin: 2px 3px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: calc(100% - 6px);
         cursor: pointer;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .day-memorial-note::before {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 5px;
+        height: 5px;
+        border-radius: 1.5px;
+        background: var(--note-color, #dc2626);
     }
     .day-memorial-note:hover {
-        opacity: 0.85;
-        border-left-color: #991b1b;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        border-color: var(--note-color, #dc2626);
+        background: var(--surface-hover, #f8fafc);
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
     }
 
     .day-memorial-notes {
         display: block;
+    }
+
+    /* Kartu detail noted: accent bar warna (lower-third) + tanggal kapital + judul */
+    .note-detail-card {
+        border: 1px solid var(--border, #e2e8f0);
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--surface, #ffffff);
+    }
+    .note-detail-accent {
+        height: 4px;
+    }
+    .note-detail-content {
+        padding: 16px 18px 18px;
+    }
+    .note-detail-date {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 10px;
+    }
+    .note-detail-title {
+        font-family: var(--font-heading);
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.45;
+        color: #0f172a;
+        word-break: break-word;
+    }
+    [data-theme="dark"] .note-detail-card {
+        background: var(--surface-secondary);
+        border-color: var(--border);
+    }
+    [data-theme="dark"] .note-detail-date { color: #94a3b8; }
+    [data-theme="dark"] .note-detail-title { color: var(--text-primary); }
+
+    /* ====== Dark mode: komponen pendukung halaman kalender ====== */
+
+    /* Badge tipe noted (hanya untuk role non-admin) */
+    .note-type-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.5;
+        padding: 2px 10px;
+        border-radius: 999px;
+    }
+    .note-type-badge.builtin { color: #64748b; background: #f1f5f9; }
+    .note-type-badge.custom { color: #003399; background: #e8eefc; }
+    [data-theme="dark"] .note-type-badge.builtin { color: #9ca0a8; background: #2a2d3f; }
+    [data-theme="dark"] .note-type-badge.custom { color: #93c5fd; background: rgba(0, 51, 153, 0.35); }
+
+    [data-theme="dark"] .modal-close-btn {
+        background: var(--surface-hover);
+        border-color: var(--border);
+        color: var(--text-secondary);
+    }
+    [data-theme="dark"] .modal-close-btn:hover {
+        background: rgba(220, 38, 38, 0.15);
+        color: #f87171;
+        border-color: rgba(220, 38, 38, 0.35);
+    }
+
+    .delete-icon-circle {
+        width: 60px;
+        height: 60px;
+        background: rgba(220, 38, 38, 0.12);
+        color: #dc2626;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    [data-theme="dark"] .delete-icon-circle {
+        background: rgba(220, 38, 38, 0.18);
+        color: #f87171;
+    }
+
+    .btn-cancel-ghost {
+        background: var(--surface-hover);
+        color: var(--text-secondary);
+        border: none;
+    }
+    .btn-cancel-ghost:hover {
+        background: var(--surface-hover);
+        filter: brightness(0.95);
+        color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .fc .fc-daygrid-day-frame::-webkit-scrollbar-thumb {
+        background: #3b4252;
     }
 
 
@@ -240,9 +411,9 @@ $users = $users ?? [];
         padding-bottom: 2px;
     }
     [data-theme="dark"] .day-memorial-note {
-        background: rgba(220, 38, 38, 0.15);
-        color: #fca5a5;
-        border-left-color: #ef4444;
+        background: var(--surface-secondary);
+        border-color: var(--border);
+        color: var(--text-primary);
     }
 
     body.modal-open {
@@ -554,6 +725,33 @@ $users = $users ?? [];
     [data-theme="dark"] .flatpickr-months .flatpickr-month {
         color: #e2e8f0 !important;
     }
+    [data-theme="dark"] .flatpickr-current-month .cur-month,
+    [data-theme="dark"] .flatpickr-current-month .numInputWrapper input.cur-year {
+        color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] .flatpickr-weekday {
+        color: #9ca0a8 !important;
+    }
+    [data-theme="dark"] .flatpickr-day {
+        color: #cbd5e1 !important;
+    }
+    [data-theme="dark"] .flatpickr-day:hover {
+        background: #2a2d3f !important;
+    }
+    [data-theme="dark"] .flatpickr-day.today:hover,
+    [data-theme="dark"] .flatpickr-day.today:focus {
+        background: #334155 !important;
+        border-color: #60a5fa !important;
+    }
+    [data-theme="dark"] .flatpickr-day.inRange {
+        background: #2a2d3f !important;
+        border-color: #475569 !important;
+    }
+    [data-theme="dark"] .flatpickr-day.prevMonthDay,
+    [data-theme="dark"] .flatpickr-day.nextMonthDay,
+    [data-theme="dark"] .flatpickr-day.flatpickr-disabled {
+        color: #6b6f78 !important;
+    }
 </style>
 
 <div class="row">
@@ -596,7 +794,7 @@ $users = $users ?? [];
     <div class="modal-dialog modal-dialog-centered" style="max-width:680px; width:90%; margin:1.75rem auto;">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px; padding:16px;">
             <div class="modal-header border-0 pb-2" style="display:flex; justify-content:space-between; align-items:center;">
-                <h5 style="font-weight:700; color:#1e293b; margin:0;"><i class="bi bi-sticky me-2" style="color:#003399;"></i> Tambah Noted Kalender</h5>
+                <h5 style="font-weight:700; color:var(--text-primary); margin:0;"><i class="bi bi-sticky me-2" style="color:#003399;"></i> Tambah Noted Kalender</h5>
                 <button type="button" class="modal-close-btn" onclick="closeNoteModal()" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
             </div>
             <div class="modal-body pt-0" style="max-height:68vh; overflow-y:auto;">
@@ -609,30 +807,13 @@ $users = $users ?? [];
                         <textarea name="note" id="noteInput" class="form-control" rows="2" placeholder="Contoh: Hari Ulang Tahun TVRI ke-60" required minlength="3" maxlength="255" style="resize: vertical; min-height: 42px;"></textarea>
                     </div>
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label font-medium">Tanggal <span class="text-danger">*</span></label>
-                                <div class="input-group-date">
-                                    <input type="text" name="note_date" id="noteDateInput" class="form-control" placeholder="dd/mm/yyyy" autocomplete="off" required>
-                                    <button type="button" class="btn-date-icon" id="btnNoteDateIcon" tabindex="-1" title="Buka Kalender">
-                                        <i class="bi bi-calendar3"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label font-medium">Warna Tampilan</label>
-                                <select name="color" id="noteColorSelect" class="form-control">
-                                    <option value="#dc3545">Merah</option>
-                                    <option value="#0d6efd">Biru</option>
-                                    <option value="#198754">Hijau</option>
-                                    <option value="#fd7e14">Oranye</option>
-                                    <option value="#6f42c1">Ungu</option>
-                                    <option value="#0dcaf0">Cyan</option>
-                                </select>
-                            </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label font-medium">Tanggal <span class="text-danger">*</span></label>
+                        <div class="input-group-date">
+                            <input type="text" name="note_date" id="noteDateInput" class="form-control" placeholder="dd/mm/yyyy" autocomplete="off" required>
+                            <button type="button" class="btn-date-icon" id="btnNoteDateIcon" tabindex="-1" title="Buka Kalender">
+                                <i class="bi bi-calendar3"></i>
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -650,7 +831,7 @@ $users = $users ?? [];
     <div class="modal-dialog modal-dialog-centered" style="max-width:520px; width:90%; margin:1.75rem auto;">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px; padding:16px;">
             <div class="modal-header border-0 pb-2" style="display:flex; justify-content:space-between; align-items:center;">
-                <h5 style="font-weight:700; color:#1e293b; margin:0;"><i class="bi bi-sticky me-2" style="color:#003399;"></i> Detail Noted</h5>
+                <h5 style="font-weight:700; color:var(--text-primary); margin:0;"><i class="bi bi-sticky me-2" style="color:#003399;"></i> Detail Noted</h5>
                 <button type="button" class="modal-close-btn" onclick="closeNoteDetailModal()" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
             </div>
             <div class="modal-body pt-0" style="max-height:60vh; overflow-y:auto;" id="noteDetailBody"></div>
@@ -667,7 +848,7 @@ $users = $users ?? [];
                 <button type="button" class="modal-close-btn" onclick="closeDeleteNoteConfirm()" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
             </div>
             <div style="margin-bottom:14px;">
-                <div style="width:60px; height:60px; background:#fee2e2; color:#dc2626; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;">
+                <div class="delete-icon-circle">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -676,10 +857,10 @@ $users = $users ?? [];
                     </svg>
                 </div>
             </div>
-            <h5 style="font-weight:700; color:#1e293b; font-size:18px; margin-bottom:8px;">Konfirmasi Hapus</h5>
-            <p id="deleteNoteConfirmMessage" style="font-size:13.5px; color:#64748b; margin-bottom:24px; line-height:1.5;">Yakin ingin menghapus noted ini?</p>
+            <h5 style="font-weight:700; color:var(--text-primary); font-size:18px; margin-bottom:8px;">Konfirmasi Hapus</h5>
+            <p id="deleteNoteConfirmMessage" style="font-size:13.5px; color:var(--text-secondary); margin-bottom:24px; line-height:1.5;">Yakin ingin menghapus noted ini?</p>
             <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn" onclick="closeDeleteNoteConfirm()" style="flex:1; height:42px; font-weight:600; font-size:14px; background:#f1f5f9; color:#475569; border:none; border-radius:10px;">Batal</button>
+                <button type="button" class="btn btn-cancel-ghost" onclick="closeDeleteNoteConfirm()" style="flex:1; height:42px; font-weight:600; font-size:14px; border:none; border-radius:10px;">Batal</button>
                 <button type="button" class="btn" onclick="submitDeleteNote()" style="flex:1; height:42px; font-weight:600; font-size:14px; background:#dc2626; color:#ffffff; border:none; border-radius:10px;"><i class="bi bi-trash me-1"></i> Hapus</button>
             </div>
         </div>
@@ -706,19 +887,6 @@ function memorialNotesFor(dateObj) {
 let calendar;
 let lastViewStart = null;
 var noteDatePicker = null;
-
-function noteTintBg(color) {
-    var m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(color || '').trim());
-    if (!m) return '';
-    var h = m[1];
-    if (h.length === 3) {
-        h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
-    }
-    var r = parseInt(h.substring(0, 2), 16);
-    var g = parseInt(h.substring(2, 4), 16);
-    var b = parseInt(h.substring(4, 6), 16);
-    return 'rgba(' + r + ',' + g + ',' + b + ',0.14)';
-}
 
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('calendar');
@@ -798,9 +966,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 el.title = (note.builtin ? 'Hari Peringatan' : 'Noted') + ': ' + note.text;
                 el.textContent = note.text;
                 if (note.color) {
-                    el.style.color = note.color;
-                    el.style.borderLeftColor = note.color;
-                    el.style.background = noteTintBg(note.color);
+                    el.style.setProperty('--note-color', note.color);
+                }
+                if (!note.builtin) {
+                    el.classList.add('is-custom');
                 }
                 el.dataset.noteId = note.id || '';
                 el.dataset.noteFullDate = fullDate;
@@ -928,11 +1097,6 @@ function resetNoteForm() {
     var input = document.getElementById('noteInput');
     if (input) input.value = '';
     if (noteDatePicker) noteDatePicker.setDate(new Date(), true);
-    var colorSelect = document.getElementById('noteColorSelect');
-    if (colorSelect) {
-        colorSelect.value = '#dc3545';
-        syncCustomDropdown('noteColorSelect');
-    }
     var title = document.querySelector('#noteModal .modal-header h5');
     if (title) title.innerHTML = '<i class="bi bi-sticky me-2" style="color:#003399;"></i> Tambah Noted Kalender';
     var submitBtn = document.querySelector('#noteModal .modal-footer button[type="submit"]');
@@ -964,34 +1128,49 @@ function closeNoteModal() {
     }, 250);
 }
 
+var HARI_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+var BULAN_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
 function openNoteDetail(el) {
+    var noteColor = el.style.getPropertyValue('--note-color') || '#b91c1c';
     currentNoteDetail = {
         id: el.dataset.noteId || null,
         text: el.textContent.trim(),
         date: el.dataset.noteFullDate || '',
-        color: el.style.color || '#b91c1c',
+        color: noteColor,
         builtin: el.dataset.noteBuiltin === '1'
     };
     var body = document.getElementById('noteDetailBody');
     var footer = document.getElementById('noteDetailFooter');
     if (!body || !footer) return;
 
-    var dateLabel = currentNoteDetail.date;
-    if (dateLabel) {
-        var p = dateLabel.split('-');
-        if (p.length === 3) dateLabel = p[2] + '/' + p[1] + '/' + p[0];
+    var dateLabel = '';
+    if (currentNoteDetail.date) {
+        var p = currentNoteDetail.date.split('-');
+        if (p.length === 3) {
+            var d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+            dateLabel = HARI_ID[d.getDay()] + ', ' + parseInt(p[2], 10) + ' ' + BULAN_ID[d.getMonth()] + ' ' + p[0];
+        }
     }
 
-    var badge = currentNoteDetail.builtin
-        ? '<span style="font-size:11px; font-weight:600; color:#64748b; background:#f1f5f9; padding:2px 10px; border-radius:999px;">Hari Peringatan Bawaan</span>'
-        : '<span style="font-size:11px; font-weight:600; color:#003399; background:#e8eefc; padding:2px 10px; border-radius:999px;">Noted Custom</span>';
+    // Keterangan "Hari Peringatan Bawaan" / "Noted Custom" hanya ditampilkan untuk role non-admin
+    // (magang). Untuk admin & superadmin (CAN_MANAGE_BUILTIN = true) badge tidak ditampilkan.
+    var badgeHtml = '';
+    if (!CAN_MANAGE_BUILTIN) {
+        badgeHtml = currentNoteDetail.builtin
+            ? '<span class="note-type-badge builtin">Hari Peringatan Bawaan</span>'
+            : '<span class="note-type-badge custom">Noted Custom</span>';
+    }
 
     body.innerHTML =
-        '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">' +
-            '<div style="font-size:15px; font-weight:700; color:#1e293b; margin-bottom:8px;">' + escHtml(currentNoteDetail.text) + '</div>' +
-            '<div style="font-size:13px; color:#475569; margin-bottom:6px;"><i class="bi bi-calendar3 me-2"></i>' + escHtml(dateLabel) + '</div>' +
+        '<div class="note-detail-card">' +
+            '<div class="note-detail-accent" style="background:' + escHtml(currentNoteDetail.color) + ';"></div>' +
+            '<div class="note-detail-content">' +
+                '<div class="note-detail-date">' + escHtml(dateLabel) + '</div>' +
+                '<div class="note-detail-title">' + escHtml(currentNoteDetail.text) + '</div>' +
+            '</div>' +
         '</div>' +
-        '<div style="text-align:center; margin-top:12px;">' + badge + '</div>';
+        (badgeHtml ? '<div style="text-align:center; margin-top:12px;">' + badgeHtml + '</div>' : '');
 
     footer.innerHTML = '';
     if (!currentNoteDetail.builtin || CAN_MANAGE_BUILTIN) {
@@ -1045,11 +1224,6 @@ function openEditNoteModal() {
     var input = document.getElementById('noteInput');
     if (input) input.value = currentNoteDetail.text;
     if (noteDatePicker && currentNoteDetail.date) noteDatePicker.setDate(currentNoteDetail.date, true);
-    var colorSelect = document.getElementById('noteColorSelect');
-    if (colorSelect && currentNoteDetail.color) {
-        colorSelect.value = currentNoteDetail.color;
-        syncCustomDropdown('noteColorSelect');
-    }
     var title = document.querySelector('#noteModal .modal-header h5');
     if (title) title.innerHTML = '<i class="bi bi-sticky me-2" style="color:#003399;"></i> Edit Noted Kalender';
     var submitBtn = document.querySelector('#noteModal .modal-footer button[type="submit"]');
@@ -1340,8 +1514,6 @@ function syncCustomDropdown(selectId) {
         });
     }
 }
-
-buildCustomDropdown('noteColorSelect');
 
 document.addEventListener('click', function() {
     closeAllCustomDropdowns();

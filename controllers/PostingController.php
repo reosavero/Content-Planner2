@@ -238,9 +238,15 @@ class PostingController extends Controller
 
         
         if (!empty($account['token_expires_at']) && strtotime($account['token_expires_at']) < time()) {
-            Database::execute("UPDATE platform_akun SET token_status = 'expired' WHERE id = ?", [$account['id']]);
-            $this->json(['success' => false, 'message' => 'Token akun ' . ucfirst($platform) . ' sudah expired. Silakan hubungkan ulang.'], 400);
-            return;
+            require_once HELPERS_PATH . 'SocialMediaAPI.php';
+            $refreshResult = SocialMediaAPI::refreshToken($account);
+            if ($refreshResult['success']) {
+                $accessToken = $refreshResult['access_token'] ?? Security::decrypt(Database::fetchColumn("SELECT access_token FROM platform_akun WHERE id = ?", [$account['id']]));
+            } else {
+                Database::execute("UPDATE platform_akun SET token_status = 'expired' WHERE id = ?", [$account['id']]);
+                $this->json(['success' => false, 'message' => 'Token akun ' . ucfirst($platform) . ' sudah expired dan gagal diperbarui: ' . ($refreshResult['error'] ?? '')], 400);
+                return;
+            }
         }
 
         

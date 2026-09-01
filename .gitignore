@@ -33,6 +33,10 @@ uploads/*
 database/backups/*
 !database/backups/.gitkeep
 database/db_lengkap.sql
+database/db_lngkp
+database/db_lngkp.sql
+database/*.sql
+!database/install_db_tvri.sql
 database/*.sql.bak
 database/*.sql.gz
 database/*.zip

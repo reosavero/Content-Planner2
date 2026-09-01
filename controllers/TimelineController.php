@@ -128,6 +128,31 @@ class TimelineController extends Controller
             "INSERT INTO timeline_tasks ({$columns}) VALUES ({$placeholders})",
             array_values($data)
         );
+
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'create', 'task', 'timeline_tasks', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), $id, 'Task "' . trim($data['title']) . '" ditambahkan', $_SERVER['REMOTE_ADDR']]
+        );
+
+        
+        try {
+            require_once HELPERS_PATH . 'Notification.php';
+            if (!empty($data['assignee_id']) && (int)$data['assignee_id'] !== (int)Session::get('user_id')) {
+                Notification::create(
+                    (int)$data['assignee_id'],
+                    'Task baru ditugaskan kepada Anda',
+                    "Task \"" . trim($data['title']) . "\" ditugaskan untuk tanggal " . date('d/m/Y', strtotime($data['task_date'])) . ". Segera kerjakan dan kirim hasilnya.",
+                    'info',
+                    '/planning?bulan=' . date('m', strtotime($data['task_date'])) . '&tahun=' . date('Y', strtotime($data['task_date'])),
+                    'bi-clipboard-check',
+                    'task_assigned',
+                    'Task Baru'
+                );
+            }
+        } catch (\Throwable $e) {
+            error_log('Notifikasi task baru gagal: ' . $e->getMessage());
+        }
         
         $this->syncCalendar($data['task_date']);
 
@@ -214,6 +239,39 @@ class TimelineController extends Controller
             "UPDATE timeline_tasks SET {$setClauses} WHERE id = ?",
             $params
         );
+
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'update', 'task', 'timeline_tasks', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), (int)$id, 'Task "' . trim($data['title']) . '" diperbarui', $_SERVER['REMOTE_ADDR']]
+        );
+
+        
+        try {
+            require_once HELPERS_PATH . 'Notification.php';
+            if (!empty($data['assignee_id'])) {
+                $assigneeChanged = isset($data['assignee_id']) && (int)$data['assignee_id'] !== (int)$task['assignee_id'];
+                $notifyAssignee = (int)$data['assignee_id'] !== (int)Session::get('user_id');
+                if ($notifyAssignee) {
+                    $title = $assigneeChanged ? 'Task baru ditugaskan kepada Anda' : 'Task Anda diperbarui';
+                    $message = $assigneeChanged
+                        ? "Task \"" . trim($data['title']) . "\" ditugaskan kepada Anda untuk tanggal " . date('d/m/Y', strtotime($data['task_date'])) . "."
+                        : "Task \"" . trim($data['title']) . "\" telah diperbarui oleh admin. Silakan cek detailnya.";
+                    Notification::create(
+                        (int)$data['assignee_id'],
+                        $title,
+                        $message,
+                        'info',
+                        '/planning?bulan=' . date('m', strtotime($data['task_date'])) . '&tahun=' . date('Y', strtotime($data['task_date'])),
+                        $assigneeChanged ? 'bi-person-plus' : 'bi-pencil-square',
+                        'task_assigned',
+                        'Task Baru'
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('Notifikasi update task gagal: ' . $e->getMessage());
+        }
         
         $this->syncCalendar($data['task_date']);
 
@@ -236,6 +294,12 @@ class TimelineController extends Controller
         }
 
         $this->deleteTaskFiles($task);
+
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'delete', 'task', 'timeline_tasks', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), (int)$id, 'Task "' . trim($task['title']) . '" dihapus', $_SERVER['REMOTE_ADDR']]
+        );
 
         Database::execute("DELETE FROM timeline_tasks WHERE id = ?", [$id]);
         $this->syncCalendar($task['task_date']);
@@ -365,7 +429,16 @@ class TimelineController extends Controller
             return;
         }
 
+        $taskTitle = Database::fetchColumn("SELECT title FROM timeline_tasks WHERE id = ?", [$id]);
+
         Database::execute("UPDATE timeline_tasks SET status = ? WHERE id = ?", [$status, $id]);
+
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'update_status', 'task', 'timeline_tasks', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), (int)$id, 'Status task "' . trim((string)$taskTitle) . '" diubah menjadi ' . $status, $_SERVER['REMOTE_ADDR']]
+        );
+
         $this->json(['success' => true]);
     }
 
@@ -458,22 +531,32 @@ class TimelineController extends Controller
 
         Database::execute(
             "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
-             VALUES (?, ?, 'submit_approval', 'approval', 'timeline_tasks', ?, 'Task dikirim untuk approval', ?)",
-            [$userId, Session::get('user_role_id'), $taskId, $_SERVER['REMOTE_ADDR']]
+             VALUES (?, ?, ?, 'approval', 'timeline_tasks', ?, ?, ?)",
+            [$userId, Session::get('user_role_id'), $task['status'] === 'Pending Approval' ? 'update_approval' : 'submit_approval', $taskId, $task['status'] === 'Pending Approval' ? 'Task dikirim ulang untuk approval' : 'Task dikirim untuk approval', $_SERVER['REMOTE_ADDR']]
         );
 
         try {
-            if (!empty($task['creator_id'])) {
-                require_once HELPERS_PATH . 'Notification.php';
-                Notification::create(
-                    (int)$task['creator_id'],
+            require_once HELPERS_PATH . 'Notification.php';
+            
+            $admins = Database::fetchAll(
+                "SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id 
+                 WHERE r.slug IN ('admin', 'superadmin') AND u.is_active = 1 AND u.deleted_at IS NULL"
+            );
+            $adminIds = array_values(array_unique(array_map('intval', array_column($admins, 'id'))));
+            if (!empty($adminIds)) {
+                Notification::createBulk(
+                    $adminIds,
                     'Task menunggu approval',
-                    ($task['assignee_name'] ?: $userName) . " telah mengirim hasil task \"{$task['title']}\" untuk direview.",
-                    'info', BASE_URL . '/approval', 'bi-check2-square'
+                    ($task['assignee_name'] ?: $userName) . " mengirim hasil task \"{$task['title']}\" untuk direview.",
+                    'info',
+                    '/approval',
+                    'bi-check2-square',
+                    'task_approval',
+                    'Approval Task'
                 );
             }
         } catch (\Throwable $e) {
-            
+            error_log('Notifikasi submit approval gagal: ' . $e->getMessage());
         }
 
         $this->json(['success' => true, 'message' => 'Hasil berhasil dikirim untuk approval']);
@@ -521,6 +604,12 @@ class TimelineController extends Controller
                 [$fileUrl, $taskId]
             );
 
+            Database::execute(
+                "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+                 VALUES (?, ?, 'upload', 'task', 'timeline_tasks', ?, ?, ?)",
+                [Session::get('user_id'), Session::get('user_role_id'), (int)$taskId, 'Upload file lampiran task "' . trim($task['title']) . '"', $_SERVER['REMOTE_ADDR']]
+            );
+
             $this->syncCalendar($task['task_date']);
 
             Session::setFlash('success', 'File berhasil diupload ke Google Drive. Klik Kirim untuk Approval setelah hasil lengkap.');
@@ -561,6 +650,12 @@ class TimelineController extends Controller
             );
         }
 
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, ?, 'calendar', 'timeline_calendar', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), $existing ? 'update' : 'create', $existing['id'] ?? null, 'Kalender ' . date('d/m/Y', strtotime($date)) . ' disimpan', $_SERVER['REMOTE_ADDR']]
+        );
+
         Session::setFlash('success', 'Kalender berhasil diperbarui');
         $this->redirect('/timeline?bulan=' . date('m', strtotime($date)) . '&tahun=' . date('Y', strtotime($date)));
     }
@@ -594,6 +689,12 @@ class TimelineController extends Controller
                 $count++;
             }
         }
+
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'create', 'calendar', 'timeline_calendar', NULL, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), 'Generate kalender ' . $month . '/' . $year . ' (' . $count . ' hari baru)', $_SERVER['REMOTE_ADDR']]
+        );
 
         Session::setFlash('success', "Kalender {$month}/{$year} berhasil dibuat ($count hari baru)");
         $this->redirect('/timeline?bulan=' . $month . '&tahun=' . $year);

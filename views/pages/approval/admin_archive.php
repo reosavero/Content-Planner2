@@ -167,6 +167,15 @@ foreach ($groupedMonths as $mk => $month) {
     color: #fff;
     transform: translateY(-1px);
 }
+[data-theme="dark"] .back-btn.header-back {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+}
+[data-theme="dark"] .back-btn.header-back:hover {
+    background: rgba(255, 255, 255, 0.35) !important;
+    color: #ffffff !important;
+}
 
 
 .archive-timeline-header .archive-delete-btn {
@@ -532,6 +541,21 @@ foreach ($groupedMonths as $mk => $month) {
 .btn-task-link.file:hover {
     background: #dcfce7;
 }
+html.modal-open,
+body.modal-open {
+    overflow: hidden !important;
+    height: 100vh !important;
+    touch-action: none;
+    overscroll-behavior: none !important;
+}
+body.modal-open .main-content,
+body.modal-open .page-content {
+    overflow: hidden !important;
+}
+#archiveModal .modal-body {
+    max-height: calc(85vh - 130px);
+    overflow-y: auto !important;
+}
 #archiveModal.show .modal-content {
     animation: slideUpFade 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both !important;
 }
@@ -804,6 +828,7 @@ function fetchFromServer(id) {
     modal.classList.add('show');
     modal.style.display = 'block';
     document.body.classList.add('modal-open');
+    document.documentElement.classList.add('modal-open');
 
     fetch(BASE_URL + '/archive/' + id, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -829,7 +854,7 @@ function showDetailModal(d) {
     var stColor = archiveStatusColor(d.status);
     var stLabel = archiveStatusLabel(d.status);
     var showWorkflow = (d.status === 'Approved' || d.status === 'Selesai' || d.status === 'Publish');
-    var showScheduleInfo = showWorkflow && d.status !== 'Approved';
+    var showScheduleInfo = showWorkflow;
 
     var html = '';
     html += '<div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">';
@@ -846,6 +871,16 @@ function showDetailModal(d) {
         html += '  <div class="col-6"><div style="background:#fff5f5; padding:12px 14px; border-radius:10px; border:1px solid #fed7d7;"><span style="font-size:11px; color:#c53030; font-weight:600; text-transform:uppercase; display:block; margin-bottom:2px;"><i class="bi bi-clock me-1"></i> Deadline</span><strong style="font-size:13px; color:#9b2c2c;">' + fmtDate(d.deadline) + '</strong></div></div>';
     }
     html += '</div>';
+
+    if (showWorkflow || d.approved_at || d.approver_name) {
+        html += '<div class="mb-4">';
+        html += '  <div class="d-flex justify-content-between align-items-center mb-2"><span style="font-size:12px; font-weight:700; color:#15803d; text-transform:uppercase;"><i class="bi bi-check-circle-fill me-1"></i> Informasi Persetujuan (Approved Info)</span></div>';
+        html += '  <div class="row g-2">';
+        html += '    <div class="col-6"><div style="background:#f0fdf4; padding:10px 12px; border-radius:10px; border:1px solid #bbf7d0;"><span style="font-size:11px; color:#15803d; font-weight:600; text-transform:uppercase; display:block; margin-bottom:2px;"><i class="bi bi-person-check me-1"></i> Disetujui Oleh</span><strong style="font-size:13px; color:#166534;">' + esc(d.approver_name || d.assigned_by_name || 'Admin / Superadmin') + '</strong></div></div>';
+        html += '    <div class="col-6"><div style="background:#f0fdf4; padding:10px 12px; border-radius:10px; border:1px solid #bbf7d0;"><span style="font-size:11px; color:#15803d; font-weight:600; text-transform:uppercase; display:block; margin-bottom:2px;"><i class="bi bi-calendar-check me-1"></i> Tanggal Disetujui</span><strong style="font-size:13px; color:#166534;">' + (d.approved_at ? fmtDateTime(d.approved_at) : (d.updated_at ? fmtDateTime(d.updated_at) : '-')) + '</strong></div></div>';
+        html += '  </div>';
+        html += '</div>';
+    }
 
     if (d.catatan) {
         html += '<div class="mb-4">';
@@ -905,7 +940,7 @@ function showDetailModal(d) {
         if (showScheduleInfo) {
             html += '<div class="mb-4">';
             html += '  <div class="d-flex justify-content-between align-items-center mb-2"><span style="font-size:12px; font-weight:700; color:#334155; text-transform:uppercase;"><i class="bi bi-calendar-event me-1"></i> Informasi Schedule / Upload</span></div>';
-            html += '  <div class="row g-2">';
+            html += '  <div class="row g-2 schedule-info-row">';
             html += '    <div class="col-6"><div style="background:#eff6ff; padding:10px 12px; border-radius:10px; border:1px solid #bfdbfe;"><span style="font-size:11px; color:#1d4ed8; font-weight:600; text-transform:uppercase; display:block; margin-bottom:2px;"><i class="bi bi-calendar3 me-1"></i> Tanggal Upload</span><strong style="font-size:13px; color:#1e3a8a;">' + fmtDate(d.task_date) + '</strong></div></div>';
             html += '    <div class="col-6"><div style="background:#eff6ff; padding:10px 12px; border-radius:10px; border:1px solid #bfdbfe;"><span style="font-size:11px; color:#1d4ed8; font-weight:600; text-transform:uppercase; display:block; margin-bottom:2px;"><i class="bi bi-clock me-1"></i> Jam Upload</span><strong style="font-size:13px; color:#1e3a8a;">' + esc(d.scheduled_time || '-') + '</strong></div></div>';
             if (d.submitted_at) {
@@ -924,6 +959,7 @@ function showDetailModal(d) {
     modal.classList.add('show');
     modal.style.display = 'block';
     document.body.classList.add('modal-open');
+    document.documentElement.classList.add('modal-open');
 }
 
 function closeArchiveModal() {
@@ -934,6 +970,7 @@ function closeArchiveModal() {
         el.classList.remove('show', 'closing');
         el.style.display = 'none';
         document.body.classList.remove('modal-open');
+        document.documentElement.classList.remove('modal-open');
     }, 250);
 }
 
@@ -948,6 +985,7 @@ function confirmDeleteMonth(key, name) {
     modal.classList.add('show');
     modal.style.display = 'block';
     document.body.classList.add('modal-open');
+    document.documentElement.classList.add('modal-open');
 }
 function closeDeleteModal() {
     var modal = document.getElementById('archiveDeleteModal');
@@ -958,6 +996,7 @@ function closeDeleteModal() {
         modal.classList.remove('show', 'closing');
         modal.style.display = 'none';
         document.body.classList.remove('modal-open');
+        document.documentElement.classList.remove('modal-open');
     }, 250);
 }
 var deleteOkBtn = document.getElementById('archiveDeleteOk');

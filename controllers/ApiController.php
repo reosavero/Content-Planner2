@@ -174,12 +174,12 @@ class ApiController extends Controller
 
         if ($id) {
             Database::execute(
-                "UPDATE notifications SET is_read = 1, read_at = NOW() WHERE id = ? AND user_id = ?",
+                "DELETE FROM notifications WHERE id = ? AND user_id = ?",
                 [$id, $userId]
             );
         }
 
-        $this->success(null, 'Notifikasi telah dibaca');
+        $this->success(null, 'Notifikasi telah dihapus');
     }
 
     
@@ -189,10 +189,10 @@ class ApiController extends Controller
     {
         $userId = Session::get('user_id');
         Database::execute(
-            "UPDATE notifications SET is_read = 1, read_at = NOW() WHERE user_id = ? AND is_read = 0",
+            "DELETE FROM notifications WHERE user_id = ?",
             [$userId]
         );
-        $this->success(null, 'Semua notifikasi telah dibaca');
+        $this->success(null, 'Semua notifikasi telah dihapus');
     }
 
     
@@ -217,11 +217,11 @@ class ApiController extends Controller
         $params[] = $userId;
 
         Database::execute(
-            "UPDATE notifications SET is_read = 1, read_at = NOW() WHERE id IN ({$placeholders}) AND user_id = ?",
+            "DELETE FROM notifications WHERE id IN ({$placeholders}) AND user_id = ?",
             $params
         );
 
-        $this->success(null, count($ids) . ' notifikasi telah dibaca');
+        $this->success(null, count($ids) . ' notifikasi telah dihapus');
     }
 
     

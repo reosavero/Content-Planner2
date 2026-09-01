@@ -18,11 +18,6 @@
     </div>
 
 
-    <div id="webNotificationDropdown" class="web-toast-dropdown" style="display: none;">
-        <div class="web-toast-content" id="webNotificationContent"></div>
-    </div>
-
-
     <div id="registerAlert" class="alert alert-danger" style="display: none; margin-bottom: 20px;"></div>
 
 
@@ -289,6 +284,21 @@
     background: #003399;
 }
 
+.wizard-step-content {
+    animation: wizardStepEntrance 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes wizardStepEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 
 .text-tracking-widest {
     letter-spacing: 8px;
@@ -440,6 +450,20 @@ function setBtnLoading(btnId, isLoading) {
 }
 
 
+function showPageLoading(text) {
+    var overlay = document.getElementById('pageLoadingOverlay');
+    if (!overlay) return;
+    var overlayText = overlay.querySelector('.page-loading-text');
+    if (overlayText) overlayText.textContent = text || 'Memproses...';
+    overlay.classList.add('show');
+}
+
+function hidePageLoading() {
+    var overlay = document.getElementById('pageLoadingOverlay');
+    if (overlay) overlay.classList.remove('show');
+}
+
+
 function togglePassword(btn) {
     var wrapper = btn.closest('.input-wrapper');
     var input = wrapper.querySelector('input');
@@ -472,6 +496,7 @@ function submitStep1() {
     }
 
     setBtnLoading('btnStep1Next', true);
+    showPageLoading('Mengirim Kode OTP...');
 
     var formData = new FormData(document.getElementById('formStep1'));
 
@@ -485,6 +510,7 @@ function submitStep1() {
     .then(response => response.json())
     .then(data => {
         setBtnLoading('btnStep1Next', false);
+        hidePageLoading();
         if (data.success) {
             currentRegisteredEmail = email;
             document.getElementById('otpTargetEmail').textContent = email;
@@ -495,6 +521,7 @@ function submitStep1() {
     })
     .catch(err => {
         setBtnLoading('btnStep1Next', false);
+        hidePageLoading();
         showAlert('Terjadi kesalahan koneksi server.');
     });
 }
@@ -508,6 +535,7 @@ function submitStep2() {
     }
 
     setBtnLoading('btnStep2Next', true);
+    showPageLoading('Memverifikasi Kode OTP...');
 
     var formData = new FormData();
     formData.append('otp', otp);
@@ -524,6 +552,7 @@ function submitStep2() {
     .then(response => response.json())
     .then(data => {
         setBtnLoading('btnStep2Next', false);
+        hidePageLoading();
         if (data.success) {
             goToStep(3);
         } else {
@@ -532,6 +561,7 @@ function submitStep2() {
     })
     .catch(err => {
         setBtnLoading('btnStep2Next', false);
+        hidePageLoading();
         showAlert('Terjadi kesalahan koneksi server.');
     });
 }
@@ -561,16 +591,13 @@ function resendOtp() {
         if (btnResend) btnResend.disabled = false;
         if (data.success) {
             showWebDropdown('Kode OTP baru telah berhasil dikirimkan ke ' + email, 'success');
-            showAlert('Kode OTP baru telah berhasil dikirimkan ke email <strong>' + email + '</strong>.', 'success');
         } else {
             showWebDropdown(data.message || 'Gagal mengirim ulang OTP.', 'danger');
-            showAlert(data.message || 'Gagal mengirim ulang OTP.', 'danger');
         }
     })
     .catch(err => {
         if (btnResend) btnResend.disabled = false;
         showWebDropdown('Terjadi kesalahan koneksi server.', 'danger');
-        showAlert('Terjadi kesalahan koneksi server.', 'danger');
     });
 }
 

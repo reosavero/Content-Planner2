@@ -404,9 +404,6 @@
     function initNotifications() {
         loadNotifications();
         
-        setInterval(pollUnreadCount, 30000);
-        
-        
         document.addEventListener('click', function(e) {
             var dd = document.getElementById('notifDropdown');
             var wrapper = e.target.closest('.topbar-notif-wrapper');
@@ -416,17 +413,6 @@
         });
     }
 
-    function pollUnreadCount() {
-        
-        fetch(APP.baseUrl + '/api/notifications/unread-count')
-            .then(function(r) { return r.json(); })
-            .then(function(res) {
-                if (!res.success || !res.data) return;
-                var count = res.data.unreadCount || 0;
-                updateBadge(count);
-            })
-            .catch(function() {});
-    }
 
     function loadNotifications() {
         var endpoint = _isPegawai ? '/api/notifications/pegawai' : '/api/notifications';
@@ -455,7 +441,10 @@
         if (!list) return;
         
         updateBadge(unreadCount);
-        if (label) label.textContent = '(' + unreadCount + ')';
+        if (label) {
+            label.textContent = unreadCount;
+            label.style.display = unreadCount > 0 ? 'inline-flex' : 'none';
+        }
         
         if (!notifs || notifs.length === 0) {
             list.innerHTML = '<div class="empty-state py-4"><i class="bi bi-bell-slash" style="font-size:2rem;color:var(--text-tertiary);"></i><p style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:8px;">Tidak ada notifikasi</p></div>';
@@ -466,7 +455,7 @@
         var groups = {};
         var ungrouped = [];
         notifs.forEach(function(n) {
-            if (n.group_key) {
+            if (n.group_key && n.group_key !== 'intern_approval') {
                 if (!groups[n.group_key]) {
                     groups[n.group_key] = {
                         key: n.group_key,
@@ -492,18 +481,14 @@
             
             html += '<div class="notif-group">';
             html += '  <div class="notif-group-header" onclick="toggleNotifGroup(\'' + escapeJs(gk) + '\')">';
-            html += '    <div style="display:flex;align-items:center;gap:6px;flex:1;">';
-            html += '      <i class="bi bi-folder2-open" style="color:var(--tvri-blue);font-size:var(--text-sm);"></i>';
-            html += '      <span style="font-weight:600;font-size:var(--text-sm);flex:1;">' + escapeHtml(g.label) + '</span>';
+            html += '    <i class="bi bi-folder2-open" style="color:var(--tvri-blue);font-size:var(--text-sm);flex-shrink:0;"></i>';
+            html += '    <span class="notif-group-label">' + escapeHtml(g.label) + '</span>';
             if (groupUnread > 0) {
-                html += '      <span class="badge badge-sm badge-primary">' + groupUnread + '</span>';
+                html += '    <span class="topbar-notif-count-badge" style="min-width:18px;height:18px;font-size:10px;">' + groupUnread + '</span>';
             }
-            html += '      <span style="font-size:var(--text-xs);color:var(--text-tertiary);">' + g.items.length + '</span>';
-            html += '      <i class="bi ' + (isExpanded ? 'bi-chevron-up' : 'bi-chevron-down') + '" style="font-size:var(--text-xs);color:var(--text-tertiary);transition:transform 0.2s;"></i>';
-            html += '    </div>';
-            html += '    <div style="display:flex;gap:4px;">';
-            html += '      <button class="notif-group-mark-btn" onclick="event.stopPropagation();markGroupNotifRead(\'' + escapeJs(gk) + '\')" title="Tandai grup dibaca"><i class="bi bi-check-all"></i></button>';
-            html += '    </div>';
+            html += '    <span class="notif-group-count">' + g.items.length + '</span>';
+            html += '    <i class="bi ' + (isExpanded ? 'bi-chevron-up' : 'bi-chevron-down') + '" style="font-size:var(--text-xs);color:var(--text-tertiary);transition:transform 0.2s;flex-shrink:0;"></i>';
+            html += '    <button class="topbar-notif-markall" style="width:26px;height:26px;" onclick="event.stopPropagation();markGroupNotifRead(\'' + escapeJs(gk) + '\')" title="Tandai grup dibaca"><i class="bi bi-check-all" style="font-size:13px;"></i></button>';
             html += '  </div>';
             
             if (isExpanded) {
@@ -525,24 +510,33 @@
     }
 
     function renderNotifItem(n) {
-        var icon = n.type === 'success' ? 'bi-check-circle' :
+        var icon = n.icon || (n.type === 'success' ? 'bi-check-circle' :
                    n.type === 'error' ? 'bi-exclamation-circle' :
-                   n.type === 'warning' ? 'bi-exclamation-triangle' : 'bi-info-circle';
+                   n.type === 'warning' ? 'bi-exclamation-triangle' : 'bi-info-circle');
         var iconColor = n.type === 'success' ? 'var(--success)' :
                         n.type === 'error' ? 'var(--danger)' :
                         n.type === 'warning' ? 'var(--warning)' : 'var(--tvri-blue)';
         
-        var href = n.link && n.link !== '#' ? n.link : 'javascript:void(0)';
-        var bgStyle = !n.is_read ? 'background:var(--tvri-blue-50, rgba(0,51,153,0.04));' : '';
+        var href = n.link;
+        if (href && href !== '#') {
+            if (href.indexOf('http') !== 0 && href.indexOf('/') === 0) {
+                href = APP.baseUrl + href;
+            }
+        } else {
+            href = 'javascript:void(0)';
+        }
         
-        return '<a href="' + href + '" class="dropdown-item notif-item" style="flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;position:relative;' + bgStyle + '" onclick="markNotifRead(' + n.id + ', event)">' +
-               '  <div style="display:flex;align-items:center;gap:8px;width:100%;">' +
-               '    <i class="bi ' + icon + '" style="color:' + iconColor + ';font-size:var(--text-md);flex-shrink:0;"></i>' +
-               '    <span style="font-weight:' + (n.is_read ? '400' : '500') + ';font-size:var(--text-sm);flex:1;line-height:1.3;">' + escapeHtml(n.title) + '</span>' +
-               '    <span style="font-size:var(--text-xs);color:var(--text-tertiary);white-space:nowrap;flex-shrink:0;">' + timeAgo(n.created_at) + '</span>' +
+        return '<a href="' + href + '" class="notif-item' + (!n.is_read ? ' is-unread' : '') + '" onclick="markNotifRead(' + n.id + ', event)">' +
+               '  <div style="display:flex;align-items:flex-start;gap:10px;width:100%;">' +
+               '    <span class="notif-item-icon type-' + (n.type || 'info') + '"><i class="bi ' + icon + '"></i></span>' +
+               '    <div style="flex:1;min-width:0;">' +
+               '      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+               '        <span class="notif-item-title" style="flex:1;min-width:0;">' + escapeHtml(n.title) + '</span>' +
+               '        <span class="notif-item-time">' + timeAgo(n.created_at) + '</span>' +
+               '      </div>' +
+               (n.message ? '      <div class="notif-item-message">' + escapeHtml(n.message) + '</div>' : '') +
+               '    </div>' +
                '  </div>' +
-               (n.message ? '  <div style="font-size:var(--text-xs);color:var(--text-secondary);padding-left:28px;line-height:1.4;margin-top:2px;">' + escapeHtml(n.message) + '</div>' : '') +
-               (!n.is_read ? '  <span class="notif-unread-dot"></span>' : '') +
                '</a>';
     }
 
@@ -552,14 +546,27 @@
         if (dot) {
             dot.style.display = count > 0 ? 'block' : 'none';
         }
-        if (label) label.textContent = '(' + count + ')';
+        if (label) {
+            label.textContent = count;
+            label.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
     }
 
     
 
     window.markNotifRead = function(id, event) {
-        if (event) event.stopPropagation();
-        
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        var href = event && event.currentTarget ? event.currentTarget.getAttribute('href') : null;
+
+        var goTo = function() {
+            if (href && href !== '#' && href !== 'javascript:void(0)') {
+                window.location.href = href;
+            }
+        };
+
         fetch(APP.baseUrl + '/api/notifications/read', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -568,9 +575,11 @@
             if (res.success) {
                 _notifUnread = Math.max(0, _notifUnread - 1);
                 updateBadge(_notifUnread);
-                loadNotifications();
             }
-        }).catch(function() {});
+            goTo();
+        }).catch(function() {
+            goTo();
+        });
     };
 
     window.markAllNotifRead = function() {

@@ -84,6 +84,13 @@ class ApprovalController extends Controller
                 return strcmp($keyA, $keyB);
             });
 
+            if ($this->isAjax()) {
+                ob_start();
+                $this->viewPartial('approval/_cards_magang', ['groupedTasks' => $groupedTasks]);
+                $html = ob_get_clean();
+                $this->success(['html' => $html]);
+            }
+
             $this->view('approval/magang_index', [
                 'title' => 'Status Approval Task',
                 'groupedTasks' => $groupedTasks,
@@ -154,6 +161,13 @@ class ApprovalController extends Controller
 
         $platforms = Database::fetchAll("SELECT id, name FROM platform_sosmed WHERE is_active = 1 ORDER BY name");
 
+        if ($this->isAjax()) {
+            ob_start();
+            $this->viewPartial('approval/_cards_admin', ['data' => $data]);
+            $html = ob_get_clean();
+            $this->success(['html' => $html]);
+        }
+
         $this->view('approval/index', [
             'title' => 'Approval Task',
             'data' => $data,
@@ -192,7 +206,7 @@ class ApprovalController extends Controller
             "UPDATE timeline_tasks SET status = 'Approved', approved_by = ?, approved_at = NOW(), revision_notes = NULL WHERE id = ?",
             [Session::get('user_id'), $id]
         );
-        $this->logTaskAction($id, 'approve', 'Task disetujui dan dipindahkan ke Scheduler');
+        $this->logTaskAction($id, 'approve', 'Task disetujui');
 
         require_once HELPERS_PATH . 'Notification.php';
         if (!empty($task['assignee_id'])) {
@@ -200,12 +214,12 @@ class ApprovalController extends Controller
                 Notification::create(
                     (int)$task['assignee_id'],
                     'Task telah disetujui',
-                    "Task \"{$task['title']}\" telah disetujui dan dipindahkan ke Scheduler.",
-                    'success', BASE_URL . '/approval', 'bi-check-circle'
+                    "Task \"{$task['title']}\" telah disetujui.",
+                    'success', '/approval', 'bi-check-circle'
                 );
             } catch (\Throwable $e) {}
         }
-        $this->json(['success' => true, 'message' => 'Task disetujui dan dipindahkan ke Scheduler']);
+        $this->json(['success' => true, 'message' => 'Task disetujui']);
     }
 
     public function taskRevision(string $id): void
@@ -234,7 +248,9 @@ class ApprovalController extends Controller
                 (int)$task['assignee_id'],
                 'Task memerlukan revisi',
                 "Task \"{$task['title']}\" memerlukan revisi. Catatan: {$notes}",
-                'warning', BASE_URL . '/dashboard', 'bi-arrow-counterclockwise', 'task_revision', 'Task Revision'
+                'warning',
+                '/planning?bulan=' . date('n', strtotime($task['task_date'])) . '&tahun=' . date('Y', strtotime($task['task_date'])),
+                'bi-arrow-counterclockwise', 'task_revision', 'Task Revision'
             );
         }
         $this->json(['success' => true, 'message' => 'Revisi dikirim kepada user']);
@@ -782,12 +798,6 @@ class ApprovalController extends Controller
                 );
             }
 
-            
-            if (!$recheckNeeded) {
-                $this->addToSchedulerQueue($planning);
-            }
-
-            
             $description = $recheckNeeded 
                 ? "Approve oleh {$roleSlug} (menunggu re-check Super Admin)"
                 : "Approve oleh {$roleSlug}";
@@ -805,7 +815,7 @@ class ApprovalController extends Controller
 
             $msg = $recheckNeeded 
                 ? 'Konten berhasil diapprove. Menunggu re-check Super Admin.'
-                : 'Konten berhasil diapprove dan masuk ke antrian scheduling.';
+                : 'Konten berhasil diapprove.';
 
             if ($this->isAjax()) {
                 $this->json(['success' => true, 'message' => $msg]);
@@ -865,10 +875,7 @@ class ApprovalController extends Controller
                     [Session::get('user_id'), $notes, $id]
                 );
 
-                
-                $this->addToSchedulerQueue($planning);
-
-                $msg = 'Re-check selesai. Konten telah diapprove final dan masuk antrian.';
+                $msg = 'Re-check selesai. Konten telah diapprove.';
 
             } else {
                 
@@ -942,8 +949,8 @@ class ApprovalController extends Controller
 
         Database::execute(
             "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
-             VALUES (?, ?, 'reject', 'approval', 'planning_konten', ?, 'Ditolak: ' . ?, ?)",
-            [Session::get('user_id'), Session::get('user_role_id'), $id, $reason, $_SERVER['REMOTE_ADDR']]
+             VALUES (?, ?, 'reject', 'approval', 'planning_konten', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), $id, 'Ditolak: ' . $reason, $_SERVER['REMOTE_ADDR']]
         );
 
         
@@ -999,8 +1006,8 @@ class ApprovalController extends Controller
 
         Database::execute(
             "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
-             VALUES (?, ?, 'request_revision', 'approval', 'planning_konten', ?, 'Minta revisi: ' . ?, ?)",
-            [Session::get('user_id'), Session::get('user_role_id'), $id, $notes, $_SERVER['REMOTE_ADDR']]
+             VALUES (?, ?, 'request_revision', 'approval', 'planning_konten', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), $id, 'Minta revisi: ' . $notes, $_SERVER['REMOTE_ADDR']]
         );
 
         
@@ -1081,7 +1088,7 @@ class ApprovalController extends Controller
         
         $message = $recheckNeeded
             ? "Konten \"{$planning['judul']}\" telah diapprove oleh Admin KMB dan menunggu re-check Super Admin."
-            : "Konten \"{$planning['judul']}\" telah diapprove dan masuk antrian posting.";
+            : "Konten \"{$planning['judul']}\" telah diapprove.";
 
         
         Notification::create(

@@ -31,6 +31,7 @@ class MasterController extends Controller
             "INSERT INTO program_tv (name, slug, description, category, is_active, sort_order) VALUES (?, ?, ?, ?, 1, 0)",
             [$data['name'], $slug, $_POST['description'] ?? '', $data['category']]
         );
+        $this->logMaster('create', 'program_tv', null, 'Program TV ditambahkan: ' . $data['name']);
         $this->redirectWith('/master/program', 'success', 'Program TV berhasil ditambahkan.');
     }
 
@@ -43,6 +44,7 @@ class MasterController extends Controller
             "UPDATE program_tv SET name = ?, description = ?, category = ?, is_active = ?, sort_order = ? WHERE id = ?",
             [$_POST['name'], $_POST['description'] ?? '', $_POST['category'], $_POST['is_active'] ?? 0, $_POST['sort_order'] ?? 0, $id]
         );
+        $this->logMaster('update', 'program_tv', (int)$id, 'Program TV #' . $id . ' diperbarui');
         $this->redirectWith('/master/program', 'success', 'Program TV berhasil diupdate.');
     }
 
@@ -52,6 +54,7 @@ class MasterController extends Controller
             $this->json(['success' => false, 'message' => 'Token CSRF tidak valid'], 403);
         }
         Database::execute("DELETE FROM program_tv WHERE id = ?", [$id]);
+        $this->logMaster('delete', 'program_tv', (int)$id, 'Program TV #' . $id . ' dihapus');
         $this->json(['success' => true, 'message' => 'Program TV berhasil dihapus.']);
     }
 
@@ -82,6 +85,7 @@ class MasterController extends Controller
             "INSERT INTO kategori_konten (name, slug, description, color, icon, sort_order) VALUES (?, ?, ?, ?, ?, 0)",
             [$_POST['name'], $slug, $_POST['description'] ?? '', $_POST['color'] ?? '#3498db', $_POST['icon'] ?? 'bi-tag']
         );
+        $this->logMaster('create', 'kategori_konten', null, 'Kategori ditambahkan: ' . $_POST['name']);
         $this->redirectWith('/master/kategori', 'success', 'Kategori berhasil ditambahkan.');
     }
 
@@ -94,6 +98,7 @@ class MasterController extends Controller
             "UPDATE kategori_konten SET name = ?, description = ?, color = ?, icon = ?, is_active = ? WHERE id = ?",
             [$_POST['name'], $_POST['description'] ?? '', $_POST['color'] ?? '#3498db', $_POST['icon'] ?? 'bi-tag', $_POST['is_active'] ?? 1, $id]
         );
+        $this->logMaster('update', 'kategori_konten', (int)$id, 'Kategori #' . $id . ' diperbarui');
         $this->redirectWith('/master/kategori', 'success', 'Kategori berhasil diupdate.');
     }
 
@@ -103,6 +108,7 @@ class MasterController extends Controller
             $this->json(['success' => false, 'message' => 'Token CSRF tidak valid'], 403);
         }
         Database::execute("DELETE FROM kategori_konten WHERE id = ?", [$id]);
+        $this->logMaster('delete', 'kategori_konten', (int)$id, 'Kategori #' . $id . ' dihapus');
         $this->json(['success' => true, 'message' => 'Kategori berhasil dihapus.']);
     }
 
@@ -127,6 +133,7 @@ class MasterController extends Controller
         $current = Database::fetchColumn("SELECT is_active FROM platform_sosmed WHERE id = ?", [$id]);
         $new = $current ? 0 : 1;
         Database::execute("UPDATE platform_sosmed SET is_active = ? WHERE id = ?", [$new, $id]);
+        $this->logMaster('update', 'platform_sosmed', (int)$id, 'Platform #' . $id . ' ' . ($new ? 'diaktifkan' : 'dinonaktifkan'));
         $this->json(['success' => true, 'is_active' => $new]);
     }
 
@@ -153,6 +160,7 @@ class MasterController extends Controller
         $slug = generateSlug($_POST['name']);
         Database::execute("INSERT INTO tags (name, slug, color) VALUES (?, ?, ?)",
             [$_POST['name'], $slug, $_POST['color'] ?? '#6c757d']);
+        $this->logMaster('create', 'tags', null, 'Tag ditambahkan: ' . $_POST['name']);
         $this->redirectWith('/master/tags', 'success', 'Tag berhasil ditambahkan.');
     }
 
@@ -162,6 +170,7 @@ class MasterController extends Controller
             $this->json(['success' => false, 'message' => 'Token CSRF tidak valid'], 403);
         }
         Database::execute("DELETE FROM tags WHERE id = ?", [$id]);
+        $this->logMaster('delete', 'tags', (int)$id, 'Tag #' . $id . ' dihapus');
         $this->json(['success' => true, 'message' => 'Tag berhasil dihapus.']);
     }
 
@@ -176,6 +185,7 @@ class MasterController extends Controller
         $name = str_starts_with($_POST['name'], '#') ? $_POST['name'] : '#' . $_POST['name'];
         $slug = generateSlug($name);
         Database::execute("INSERT INTO hashtag (name, slug) VALUES (?, ?)", [$name, $slug]);
+        $this->logMaster('create', 'hashtag', null, 'Hashtag ditambahkan: ' . $name);
         $this->redirectWith('/master/tags', 'success', 'Hashtag berhasil ditambahkan.');
     }
 
@@ -185,6 +195,7 @@ class MasterController extends Controller
             $this->json(['success' => false, 'message' => 'Token CSRF tidak valid'], 403);
         }
         Database::execute("DELETE FROM hashtag WHERE id = ?", [$id]);
+        $this->logMaster('delete', 'hashtag', (int)$id, 'Hashtag #' . $id . ' dihapus');
         $this->json(['success' => true, 'message' => 'Hashtag berhasil dihapus.']);
     }
 
@@ -217,6 +228,7 @@ class MasterController extends Controller
             "INSERT INTO template_caption (name, content, platform_id, hashtag_placeholder) VALUES (?, ?, ?, ?)",
             [$_POST['name'], $_POST['content'], $_POST['platform_id'] ?: null, $_POST['hashtag_placeholder'] ?? '{hashtag}']
         );
+        $this->logMaster('create', 'template_caption', null, 'Template ditambahkan: ' . $_POST['name']);
         $this->redirectWith('/master/template', 'success', 'Template berhasil ditambahkan.');
     }
 
@@ -229,6 +241,7 @@ class MasterController extends Controller
             "UPDATE template_caption SET name = ?, content = ?, platform_id = ?, hashtag_placeholder = ? WHERE id = ?",
             [$_POST['name'], $_POST['content'], $_POST['platform_id'] ?: null, $_POST['hashtag_placeholder'] ?? '{hashtag}', $id]
         );
+        $this->logMaster('update', 'template_caption', (int)$id, 'Template #' . $id . ' diperbarui');
         $this->redirectWith('/master/template', 'success', 'Template berhasil diupdate.');
     }
 
@@ -238,6 +251,7 @@ class MasterController extends Controller
             $this->json(['success' => false, 'message' => 'Token CSRF tidak valid'], 403);
         }
         Database::execute("DELETE FROM template_caption WHERE id = ?", [$id]);
+        $this->logMaster('delete', 'template_caption', (int)$id, 'Template #' . $id . ' dihapus');
         $this->json(['success' => true, 'message' => 'Template berhasil dihapus.']);
     }
 
@@ -263,6 +277,7 @@ class MasterController extends Controller
             "INSERT INTO lokasi_shooting (name, address, city, latitude, longitude) VALUES (?, ?, ?, ?, ?)",
             [$_POST['name'], $_POST['address'] ?? '', $_POST['city'] ?? '', $_POST['latitude'] ?? null, $_POST['longitude'] ?? null]
         );
+        $this->logMaster('create', 'lokasi_shooting', null, 'Lokasi ditambahkan: ' . $_POST['name']);
         $this->redirectWith('/master/lokasi', 'success', 'Lokasi berhasil ditambahkan.');
     }
 
@@ -275,6 +290,7 @@ class MasterController extends Controller
             "UPDATE lokasi_shooting SET name = ?, address = ?, city = ?, latitude = ?, longitude = ? WHERE id = ?",
             [$_POST['name'], $_POST['address'] ?? '', $_POST['city'] ?? '', $_POST['latitude'] ?? null, $_POST['longitude'] ?? null, $id]
         );
+        $this->logMaster('update', 'lokasi_shooting', (int)$id, 'Lokasi #' . $id . ' diperbarui');
         $this->redirectWith('/master/lokasi', 'success', 'Lokasi berhasil diupdate.');
     }
 
@@ -284,6 +300,7 @@ class MasterController extends Controller
             $this->json(['success' => false, 'message' => 'Token CSRF tidak valid'], 403);
         }
         Database::execute("DELETE FROM lokasi_shooting WHERE id = ?", [$id]);
+        $this->logMaster('delete', 'lokasi_shooting', (int)$id, 'Lokasi #' . $id . ' dihapus');
         $this->json(['success' => true, 'message' => 'Lokasi berhasil dihapus.']);
     }
 
@@ -310,6 +327,7 @@ class MasterController extends Controller
             "INSERT INTO talent (name, slug, position, bio, phone, email, instagram) VALUES (?, ?, ?, ?, ?, ?, ?)",
             [$_POST['name'], $slug, $_POST['position'] ?? '', $_POST['bio'] ?? '', $_POST['phone'] ?? '', $_POST['email'] ?? '', $_POST['instagram'] ?? '']
         );
+        $this->logMaster('create', 'talent', null, 'Talent ditambahkan: ' . $_POST['name']);
         $this->redirectWith('/master/talent', 'success', 'Talent berhasil ditambahkan.');
     }
 
@@ -322,6 +340,7 @@ class MasterController extends Controller
             "UPDATE talent SET name = ?, position = ?, bio = ?, phone = ?, email = ?, instagram = ? WHERE id = ?",
             [$_POST['name'], $_POST['position'] ?? '', $_POST['bio'] ?? '', $_POST['phone'] ?? '', $_POST['email'] ?? '', $_POST['instagram'] ?? '', $id]
         );
+        $this->logMaster('update', 'talent', (int)$id, 'Talent #' . $id . ' diperbarui');
         $this->redirectWith('/master/talent', 'success', 'Talent berhasil diupdate.');
     }
 
@@ -331,6 +350,19 @@ class MasterController extends Controller
             $this->json(['success' => false, 'message' => 'Token CSRF tidak valid'], 403);
         }
         Database::execute("DELETE FROM talent WHERE id = ?", [$id]);
+        $this->logMaster('delete', 'talent', (int)$id, 'Talent #' . $id . ' dihapus');
         $this->json(['success' => true, 'message' => 'Talent berhasil dihapus.']);
+    }
+
+    
+
+
+    private function logMaster(string $action, string $tableName, ?int $recordId, string $description): void
+    {
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, ?, 'master', ?, ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), $action, $tableName, $recordId, $description, $_SERVER['REMOTE_ADDR']]
+        );
     }
 }

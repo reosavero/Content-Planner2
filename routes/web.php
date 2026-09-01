@@ -32,10 +32,6 @@ Route::post('/register/complete', 'RegisterController@complete');
 
 
 
-Route::get('/auth/{platform}/callback', 'SocialAuthController@callback');
-
-
-
 Route::get('/social-media', 'SocialMediaController@index', ['Auth']);
 Route::get('/social-media/{platform}/connect', 'SocialMediaController@connect', ['Auth']);
 Route::get('/social-media/{platform}/callback', 'SocialMediaController@callback');
@@ -60,6 +56,7 @@ Route::post('/planning/{id}/update', 'PlanningController@update', ['Auth']);
 Route::post('/planning/{id}/delete', 'PlanningController@delete', ['Auth']);
 Route::post('/planning/{id}/status', 'PlanningController@updateStatus', ['Auth']);
 Route::post('/planning/bulk-action', 'PlanningController@bulkAction', ['Auth']);
+Route::post('/planning/{id}/publish-multi', 'SocialMediaController@publishMulti', ['Auth']);
 
 
 Route::get('/calendar', 'CalendarController@index', ['Auth']);
@@ -133,7 +130,7 @@ Route::post('/master/tags/store', 'MasterController@tagsStore', ['Auth']);
 Route::post('/master/tags/{id}/delete', 'MasterController@tagsDelete', ['Auth']);
 
 
-Route::get('/master/hashtag', 'MasterController@hashtag', ['Auth']);
+Route::get('/master/hashtag', 'MasterController@hashrtag', ['Auth']);
 Route::post('/master/hashtag/store', 'MasterController@hashtagStore', ['Auth']);
 Route::post('/master/hashtag/{id}/delete', 'MasterController@hashtagDelete', ['Auth']);
 
@@ -162,7 +159,13 @@ Route::post('/intern-users/{id}/reject', 'InternUserController@reject', ['Auth']
 Route::post('/intern-users/{id}/delete', 'InternUserController@delete', ['Auth']);
 
 
-Route::get('/roles', 'RoleController@index', ['Auth', 'SuperAdmin']);
+Route::get('/users', 'UserController@index', ['Auth', 'SuperAdmin']);
+Route::get('/users/create', 'UserController@create', ['Auth', 'SuperAdmin']);
+Route::post('/users/store', 'UserController@store', ['Auth', 'SuperAdmin']);
+Route::get('/users/{id}/edit', 'UserController@edit', ['Auth', 'SuperAdmin']);
+Route::post('/users/{id}/update', 'UserController@update', ['Auth', 'SuperAdmin']);
+Route::post('/users/{id}/delete', 'UserController@delete', ['Auth', 'SuperAdmin']);
+Route::post('/users/{id}/toggle-active', 'UserController@toggleActive', ['Auth', 'SuperAdmin']);
 
 
 Route::get('/platform-accounts', 'PlatformAccountController@index', ['Auth']);
@@ -248,9 +251,3 @@ Route::get('/cron/scheduler', 'CronController@scheduler');
 Route::get('/cron/refresh-tokens', 'CronController@refreshTokens');
 Route::get('/cron/cleanup-logs', 'CronController@cleanupLogs');
 Route::get('/cron/backup', 'CronController@backup');
-
-
-
-
-
-

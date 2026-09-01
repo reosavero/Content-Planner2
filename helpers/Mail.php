@@ -283,7 +283,8 @@ class Mail
     public static function sendApprovalNotification(string $toEmail, string $toName, string $username): bool
     {
         $subject = "Konfirmasi Akun Magang - TVRI Content Planner";
-        $loginUrl = BASE_URL . '/login';
+        $baseUrl = defined('PUBLIC_BASE_URL') && !empty(PUBLIC_BASE_URL) ? PUBLIC_BASE_URL : BASE_URL;
+        $loginUrl = rtrim($baseUrl, '/') . '/login';
 
         $htmlBody = '
         <div style="font-family: Arial, sans-serif; max-width: 550px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #ffffff;">

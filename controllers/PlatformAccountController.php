@@ -110,7 +110,7 @@ class PlatformAccountController extends Controller
         
         return match($platform) {
             'facebook' => "https://www.facebook.com/" . FB_GRAPH_VERSION . "/dialog/oauth?client_id=" . FB_APP_ID . "&redirect_uri=" . urlencode(FB_REDIRECT_URI) . "&scope=pages_manage_posts,pages_read_engagement,pages_show_list,public_profile&response_type=code",
-            'instagram' => "https://www.instagram.com/oauth/authorize?client_id=" . FB_APP_ID . "&redirect_uri=" . urlencode(defined('IG_REDIRECT_URI') ? IG_REDIRECT_URI : FB_REDIRECT_URI) . "&scope=instagram_basic,instagram_content_publish,pages_show_list&response_type=code",
+            'instagram' => "https://www.facebook.com/" . FB_GRAPH_VERSION . "/dialog/oauth?client_id=" . FB_APP_ID . "&redirect_uri=" . urlencode(IG_REDIRECT_URI) . "&scope=instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,public_profile&response_type=code",
             'youtube' => "https://accounts.google.com/o/oauth2/auth?client_id=" . YT_CLIENT_ID . "&redirect_uri=" . urlencode(YT_REDIRECT_URI) . "&scope=https://www.googleapis.com/auth/youtube.upload%20https://www.googleapis.com/auth/youtube.readonly&response_type=code&access_type=offline",
             'tiktok' => "https://www.tiktok.com/v2/auth/authorize?client_key=" . TT_CLIENT_KEY . "&redirect_uri=" . urlencode(TT_REDIRECT_URI) . "&scope=user.info.basic,video.publish&response_type=code",
             'twitter' => "https://twitter.com/i/oauth2/authorize?client_id=" . TW_API_KEY . "&redirect_uri=" . urlencode(TW_REDIRECT_URI) . "&scope=tweet.write%20tweet.read%20users.read%20offline.access&response_type=code&code_challenge=challenge&code_challenge_method=plain",

@@ -44,12 +44,14 @@ class InternUserController extends Controller
         $params = [];
 
         if ($userRoleSlug === 'superadmin') {
-            if ($roleFilter === 'admin') {
+            if ($roleFilter === 'superadmin') {
+                $where .= " AND r.slug IN ('superadmin', 'super_admin')";
+            } elseif ($roleFilter === 'admin') {
                 $where .= " AND r.slug = 'admin'";
             } elseif ($roleFilter === 'magang') {
                 $where .= " AND r.slug = 'magang'";
             } else {
-                $where .= " AND r.slug IN ('admin', 'magang')";
+                $where .= " AND r.slug IN ('superadmin', 'super_admin', 'admin', 'magang')";
             }
         } else {
             $where .= " AND r.slug = 'magang'";
@@ -155,6 +157,23 @@ class InternUserController extends Controller
         );
 
         
+        try {
+            require_once HELPERS_PATH . 'Notification.php';
+            Notification::create(
+                (int)$user['id'],
+                'Akun magang Anda disetujui',
+                "Akun Anda sebagai " . $user['name'] . " telah disetujui. Silakan login untuk mulai mengerjakan task.",
+                'success',
+                '/login',
+                'bi-person-check',
+                'intern_approved',
+                'Akun Disetujui'
+            );
+        } catch (\Throwable $e) {
+            error_log('Notifikasi persetujuan akun gagal: ' . $e->getMessage());
+        }
+
+        
         Mail::sendApprovalNotification($user['email'], $user['name'], $user['username']);
 
         
@@ -236,33 +255,58 @@ class InternUserController extends Controller
 
         $currentUserId = Session::get('user_id');
 
-        
-        Database::execute("UPDATE planning_konten SET created_by = ? WHERE created_by = ?", [$currentUserId, $id]);
-        Database::execute("UPDATE planning_konten SET pic_id = NULL WHERE pic_id = ?", [$id]);
-        Database::execute("UPDATE planning_konten SET editor_id = NULL WHERE editor_id = ?", [$id]);
-        Database::execute("UPDATE planning_konten SET approved_by = NULL WHERE approved_by = ?", [$id]);
+        try {
+            $safeExecute = function (string $sql, array $params = []): void {
+                try {
+                    Database::execute($sql, $params);
+                } catch (\Throwable $e) {
+                    // Ignore if table or column doesn't exist in database
+                }
+            };
 
-        
-        Database::execute("DELETE FROM activity_logs WHERE user_id = ?", [$id]);
-        Database::execute("DELETE FROM notifications WHERE user_id = ?", [$id]);
-        Database::execute("DELETE FROM platform_accounts WHERE user_id = ?", [$id]);
+            
+            $safeExecute("UPDATE planning_konten SET created_by = ? WHERE created_by = ?", [$currentUserId, $id]);
+            $safeExecute("UPDATE planning_konten SET pic_id = NULL WHERE pic_id = ?", [$id]);
+            $safeExecute("UPDATE planning_konten SET editor_id = NULL WHERE editor_id = ?", [$id]);
+            $safeExecute("UPDATE planning_konten SET approved_by = NULL WHERE approved_by = ?", [$id]);
+            $safeExecute("UPDATE planning_konten SET rechecked_by = NULL WHERE rechecked_by = ?", [$id]);
 
-        
-        Database::execute("DELETE FROM users WHERE id = ?", [$id]);
+            
+            $safeExecute("UPDATE recheck_logs SET approved_by = NULL WHERE approved_by = ?", [$id]);
+            $safeExecute("UPDATE backup_logs SET performed_by = NULL WHERE performed_by = ?", [$id]);
+            $safeExecute("UPDATE posting_logs SET performed_by = NULL WHERE performed_by = ?", [$id]);
+            $safeExecute("UPDATE lokasi_shooting SET created_by = NULL WHERE created_by = ?", [$id]);
+            $safeExecute("UPDATE lokasi_shooting SET updated_by = NULL WHERE updated_by = ?", [$id]);
+            $safeExecute("UPDATE calendar_notes SET created_by = NULL WHERE created_by = ?", [$id]);
 
-        
-        Database::execute(
-            "INSERT INTO activity_logs (user_id, role_id, action, module, description, ip_address, user_agent)
-             VALUES (?, ?, 'delete_user', 'intern_user', ?, ?, ?)",
-            [Session::get('user_id'), Session::get('user_role_id'), "Hapus permanen user: {$user['name']} ({$user['username']})", $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'] ?? '']
-        );
+            
+            $safeExecute("DELETE FROM activity_logs WHERE user_id = ?", [$id]);
+            $safeExecute("DELETE FROM notifications WHERE user_id = ?", [$id]);
+            $safeExecute("DELETE FROM notifications WHERE pegawai_id = ?", [$id]);
+            $safeExecute("DELETE FROM platform_akun WHERE user_id = ?", [$id]);
+            $safeExecute("DELETE FROM platform_accounts WHERE user_id = ?", [$id]);
+            $safeExecute("DELETE FROM user_sessions WHERE user_id = ?", [$id]);
 
-        $msg = 'User "' . htmlspecialchars($user['name']) . '" berhasil dihapus dari database.';
-        Session::setFlash('success', $msg);
+            
+            Database::execute("DELETE FROM users WHERE id = ?", [$id]);
 
-        $this->json([
-            'success' => true,
-            'message' => $msg
-        ]);
+            
+            $safeExecute(
+                "INSERT INTO activity_logs (user_id, role_id, action, module, description, ip_address, user_agent)
+                 VALUES (?, ?, 'delete_user', 'intern_user', ?, ?, ?)",
+                [Session::get('user_id'), Session::get('user_role_id'), "Hapus permanen user: {$user['name']} ({$user['username']})", $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'] ?? '']
+            );
+
+            $msg = 'User "' . htmlspecialchars($user['name']) . '" berhasil dihapus dari database.';
+            Session::setFlash('success', $msg);
+
+            $this->json([
+                'success' => true,
+                'message' => $msg
+            ]);
+        } catch (\Throwable $e) {
+            error_log('Gagal hapus intern user: ' . $e->getMessage());
+            $this->json(['success' => false, 'message' => 'Gagal menghapus user: ' . $e->getMessage()], 500);
+        }
     }
 }

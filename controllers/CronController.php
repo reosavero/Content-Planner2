@@ -116,6 +116,8 @@ class CronController extends Controller
                     [$post['planning_id'], $post['platform_akun_id'], json_encode($result)]
                 );
 
+                $this->logActivity('auto_post', 'scheduler', 'planning_konten', (int)$post['planning_id'], 'Auto posting sukses ke ' . $post['platform_name'] . ': ' . $post['judul']);
+
                 
                 $creatorId = Database::fetchColumn(
                     "SELECT created_by FROM planning_konten WHERE id = ?",
@@ -174,6 +176,8 @@ class CronController extends Controller
                  VALUES (?, ?, 'posting', 'failed', ?, ?, NOW())",
                 [$post['planning_id'], $post['platform_akun_id'], $e->getMessage(), json_encode(['error' => $e->getMessage()])]
             );
+
+            $this->logActivity('auto_post_failed', 'scheduler', 'planning_konten', (int)$post['planning_id'], 'Auto posting gagal ke ' . $post['platform_name'] . ': ' . $e->getMessage());
         }
     }
 
@@ -468,5 +472,17 @@ class CronController extends Controller
         }
         $message .= PHP_EOL;
         file_put_contents($logFile, $message, FILE_APPEND);
+    }
+
+    
+
+
+    private function logActivity(string $action, string $module, ?string $tableName, ?int $recordId, string $description): void
+    {
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (NULL, NULL, ?, ?, ?, ?, ?, ?)",
+            [$action, $module, $tableName, $recordId, $description, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']
+        );
     }
 }

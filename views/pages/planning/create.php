@@ -32,12 +32,21 @@ $users = $users ?? [];
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label font-medium">Platform Sosmed <span class="text-danger">*</span></label>
-                            <select name="platform_id" class="form-control" required>
-                                <option value="">-- Pilih Platform --</option>
+                            <div class="form-hint text-xs text-tertiary mb-2">Pilih satu atau lebih platform target posting</div>
+                            <div class="row g-2">
                                 <?php foreach ($platforms as $p): ?>
-                                    <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['name']) ?></option>
+                                    <div class="col-6 col-md-4 col-lg-3">
+                                        <label class="form-check form-check-inline d-block">
+                                            <input class="form-check-input" type="checkbox" name="platform_ids[]" value="<?= $p['id'] ?>" style="accent-color: <?= $p['color'] ?>;">
+                                            <span class="form-check-label d-flex align-items-center gap-1" style="color: <?= $p['color'] ?>;">
+                                                <i class="bi <?= $p['icon'] ?>" style="font-size: 1.1em;"></i>
+                                                <span class="text-truncate" style="max-width: 100px;"><?= htmlspecialchars($p['name']) ?></span>
+                                            </span>
+                                        </label>
+                                    </div>
                                 <?php endforeach; ?>
-                            </select>
+                            </div>
+                            <input type="hidden" name="platform_id" value="">
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -175,6 +184,23 @@ $users = $users ?? [];
                     <i class="bi bi-check-circle me-1"></i> Simpan Planning
                 </button>
             </div>
-        </form>
+        <script>
+document.addEventListener("DOMContentLoaded", function() {
+    const checkboxes = document.querySelectorAll("input[name=\"platform_ids[]\"]");
+    const hiddenInput = document.querySelector("input[name=\"platform_id\"]");
+    
+    function syncPlatformId() {
+        const checked = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+        hiddenInput.value = checked[0] || "";
+    }
+    
+    checkboxes.forEach(cb => cb.addEventListener("change", syncPlatformId));
+    
+    // Initial sync
+    syncPlatformId();
+});
+</script>
+
+</form>
     </div>
 </div>

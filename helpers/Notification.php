@@ -37,8 +37,8 @@ class Notification
         }
 
         return Database::insert(
-            "INSERT INTO notifications (user_id, type, title, message, link, icon, is_read, created_at) 
-             VALUES (?, ?, ?, ?, ?, ?, 0, ?)",
+            "INSERT INTO notifications (user_id, type, title, message, link, icon, group_key, group_label, is_read, created_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)",
             [
                 $userId,
                 $type,
@@ -46,6 +46,8 @@ class Notification
                 $message,
                 $link,
                 $icon,
+                $groupKey,
+                $groupLabel,
                 date('Y-m-d H:i:s'),
             ]
         );
@@ -69,6 +71,7 @@ class Notification
         string $message = '',
         string $type = 'info',
         ?string $link = null,
+        ?string $icon = null,
         ?string $groupKey = null,
         ?string $groupLabel = null
     ): bool {
@@ -83,17 +86,19 @@ class Notification
         $values = [];
         $params = [];
         foreach ($userIds as $userId) {
-            $values[] = "(?, ?, ?, ?, ?, ?, 0, ?)";
+            $values[] = "(?, ?, ?, ?, ?, ?, ?, ?, 0, ?)";
             $params[] = $userId;
             $params[] = $type;
             $params[] = $title;
             $params[] = $message;
             $params[] = $link;
-            $params[] = null; 
+            $params[] = $icon;
+            $params[] = $groupKey;
+            $params[] = $groupLabel;
             $params[] = $now;
         }
 
-        $sql = "INSERT INTO notifications (user_id, type, title, message, link, icon, is_read, created_at) VALUES " 
+        $sql = "INSERT INTO notifications (user_id, type, title, message, link, icon, group_key, group_label, is_read, created_at) VALUES " 
              . implode(', ', $values);
 
         return Database::execute($sql, $params);

@@ -97,7 +97,7 @@ class SocialAuthController extends Controller
         $tokenUrl = "https://graph.facebook.com/" . FB_GRAPH_VERSION . "/oauth/access_token";
         $tokenUrl .= "?client_id=" . FB_APP_ID;
         $tokenUrl .= "&client_secret=" . FB_APP_SECRET;
-        $tokenUrl .= "&redirect_uri=" . urlencode(FB_REDIRECT_URI);
+        $tokenUrl .= "&redirect_uri=" . urlencode(IG_REDIRECT_URI);
         $tokenUrl .= "&code=" . $code;
 
         $response = $this->httpGet($tokenUrl);

@@ -12,7 +12,9 @@ class AuthController extends Controller
     public function showLoginForm(): void
     {
         if (Session::isLoggedIn()) {
-            $this->redirect('/dashboard');
+            $userRole = Session::get('user_role_slug');
+            $landing = in_array($userRole, ['superadmin', 'admin']) ? '/planning' : '/dashboard';
+            $this->redirect($landing);
             return;
         }
 
@@ -30,7 +32,9 @@ class AuthController extends Controller
     public function login(): void
     {
         if (Session::isLoggedIn()) {
-            $this->redirect('/dashboard');
+            $userRole = Session::get('user_role_slug');
+            $landing = in_array($userRole, ['superadmin', 'admin']) ? '/planning' : '/dashboard';
+            $this->redirect($landing);
             return;
         }
 
@@ -215,10 +219,15 @@ class AuthController extends Controller
         Session::generateCsrfToken();
 
         
-        $intendedUrl = ($user['role_slug'] === 'magang')
-            ? '/dashboard'
-            : ($savedIntendedUrl ?? '/dashboard');
+        if (in_array($user['role_slug'], ['superadmin', 'admin'], true)) {
+            $intendedUrl = (empty($savedIntendedUrl) || $savedIntendedUrl === '/dashboard' || $savedIntendedUrl === '/')
+                ? '/planning'
+                : $savedIntendedUrl;
+        } else {
+            $intendedUrl = ($user['role_slug'] === 'magang') ? '/dashboard' : ($savedIntendedUrl ?? '/dashboard');
+        }
 
+        Session::remove('intended_url');
         $this->redirect($intendedUrl);
     }
 

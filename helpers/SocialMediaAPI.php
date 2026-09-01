@@ -689,7 +689,58 @@ class SocialMediaAPI
         return ['success' => false, 'error' => $result['error']['message'] ?? 'Gagal refresh token'];
     }
 
-    private static function refreshYouTubeToken(array $account): array { return ['success' => false, 'error' => 'YouTube token refresh manual']; }
+    private static function refreshYouTubeToken(array $account): array
+    {
+        $refreshToken = Security::decrypt($account['refresh_token'] ?? '');
+        if (empty($refreshToken)) {
+            return ['success' => false, 'error' => 'Refresh token YouTube tidak ditemukan. Silakan hubungkan ulang akun.'];
+        }
+
+        $clientId = YT_CLIENT_ID;
+        $clientSecret = YT_CLIENT_SECRET;
+
+        if (empty($clientId) || empty($clientSecret)) {
+            return ['success' => false, 'error' => 'YT_CLIENT_ID atau YT_CLIENT_SECRET belum dikonfigurasi pada config/social.php'];
+        }
+
+        $tokenUrl = "https://oauth2.googleapis.com/token";
+        $postData = [
+            'client_id' => $clientId,
+            'client_secret' => $clientSecret,
+            'refresh_token' => $refreshToken,
+            'grant_type' => 'refresh_token'
+        ];
+
+        $ch = curl_init($tokenUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query($postData),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
+            CURLOPT_TIMEOUT => 30
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $data = json_decode($response, true);
+
+        if ($httpCode === 200 && !empty($data['access_token'])) {
+            $expiresIn = $data['expires_in'] ?? 3600;
+            $expiresAt = date('Y-m-d H:i:s', time() + $expiresIn);
+            
+            Database::execute(
+                "UPDATE platform_akun SET access_token = ?, token_expires_at = ?, token_status = 'active', updated_at = NOW() WHERE id = ?",
+                [Security::encrypt($data['access_token']), $expiresAt, $account['id']]
+            );
+
+            return ['success' => true, 'access_token' => $data['access_token'], 'expires_at' => $expiresAt];
+        }
+
+        return ['success' => false, 'error' => $data['error_description'] ?? $data['error'] ?? 'Gagal memperbarui token YouTube'];
+    }
+
     private static function refreshTikTokToken(array $account): array { return ['success' => false, 'error' => 'TikTok token refresh manual']; }
     private static function refreshTwitterToken(array $account): array { return ['success' => false, 'error' => 'Twitter token refresh manual']; }
 }

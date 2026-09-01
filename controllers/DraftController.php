@@ -48,6 +48,12 @@ class DraftController extends Controller
             [$id]
         );
 
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'submit_review', 'planning', 'planning_konten', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), (int)$id, 'Draft "' . $planning['judul'] . '" dikirim ke review', $_SERVER['REMOTE_ADDR']]
+        );
+
         
         $editors = Database::fetchAll(
             "SELECT id FROM users WHERE role_id = (SELECT id FROM roles WHERE slug = 'admin') AND is_active = 1"

@@ -178,6 +178,111 @@ $statusClass = match($planning['status'] ?? '') {
         </div>
     </div>
 
+    <!-- MULTI-PLATFORM STATUS TABLE -->
+    <?php 
+    $multiPlatforms = Database::fetchAll(
+        "SELECT pkp.*, p.name as platform_name, p.icon, p.color, p.slug
+         FROM planning_konten_platform pkp
+         JOIN platform_sosmed p ON p.slug = pkp.platform
+         WHERE pkp.planning_konten_id = ?",
+        [$planning["id"]]
+    );
+
+    $hasPending = false;
+    foreach ($multiPlatforms as $mp) {
+        if (in_array($mp["status"], ["pending", "failed"])) {
+            $hasPending = true;
+            break;
+        }
+    }
+    $userRole = Session::get("user_role_slug");
+    ?>
+
+    <div class="col-12">
+        <div class="card mb-4" style="border-radius: 16px; border: 1px solid #e2e8f0; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden;">
+            <div class="card-header d-flex align-items-center justify-content-between" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 16px 20px;">
+                <h5 class="m-0 font-bold" style="font-size: 15px; color: #0f172a;"><i class="bi bi-share-fill me-2" style="color: #1a237e;"></i> Status Publish per Platform</h5>
+                <?php if ($hasPending && in_array($userRole, ["admin", "superadmin"])): ?>
+                    <form id="formPublishMulti" action="<?php echo BASE_URL; ?>/planning/<?php echo $planning["id"]; ?>/publish-multi" method="POST" style="display: inline;">
+                        <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo CSRF_TOKEN; ?>">
+                        <button type="submit" class="btn btn-primary" style="border-radius: 10px; font-weight: 600;" onclick="return confirm('Publish ke SEMUA platform terpilih?')">
+                            <i class="bi bi-send-check-fill me-1"></i> 🚀 Publish ke Semua Platform
+                        </button>
+                    </form>
+                <?php endif; ?>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 140px;">Platform</th>
+                                <th>Status</th>
+                                <th>Post ID</th>
+                                <th>URL</th>
+                                <th>Error</th>
+                                <th>Retry</th>
+                                <th style="width: 100px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($multiPlatforms as $mp): ?>
+                                <tr>
+                                    <td>
+                                        <i class="bi <?php echo $mp["icon"]; ?> me-1" style="color: <?php echo $mp["color"]; ?>; font-size: 1.1rem;"></i>
+                                        <strong><?php echo $mp["platform_name"]; ?></strong>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $statusColor = [
+                                            "success" => "rgba(16,185,129,0.12);color:#059669;border:1px solid rgba(16,185,129,0.25)",
+                                            "publishing" => "rgba(245,158,11,0.12);color:#d97706;border:1px solid rgba(245,158,11,0.25)",
+                                            "failed" => "rgba(239,68,68,0.12);color:#dc2626;border:1px solid rgba(239,68,68,0.25)",
+                                            "pending" => "rgba(100,116,139,0.12);color:#64748b;border:1px solid rgba(100,116,139,0.25)",
+                                        ];
+                                        $style = $statusColor[$mp["status"]] ?? $statusColor["pending"];
+                                        ?>
+                                        <span class="badge" style="background: <?php echo $style; ?>; padding: 6px 12px; font-size: 0.78rem; font-weight: 600; border-radius: 6px;">
+                                            <?php echo ucfirst($mp["status"]); ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo $mp["platform_post_id"] ? "<code>" . $mp["platform_post_id"] . "</code>" : "-"; ?></td>
+                                    <td>
+                                        <?php if ($mp["platform_post_url"]): ?>
+                                            <a href="<?php echo $mp["platform_post_url"]; ?>" target="_blank" class="btn btn-sm btn-outline-primary" style="border-radius: 6px;">
+                                                <i class="bi bi-box-arrow-up-right"></i> Lihat
+                                            </a>
+                                        <?php else: echo "-"; endif; ?>
+                                    </td>
+                                    <td><?php echo $mp["error_message"] ? "<small style=\"color:#dc2626\">" . htmlspecialchars($mp["error_message"]) . "</small>" : "-"; ?></td>
+                                    <td><?php echo $mp["retry_count"] ?? 0; ?></td>
+                                    <td>
+                                        <?php if (in_array($mp["status"], ["pending", "failed"]) && in_array($userRole, ["admin", "superadmin"])): ?>
+                                            <form action="<?php echo BASE_URL; ?>/planning/<?php echo $planning["id"]; ?>/publish-now" method="POST" style="display: inline;">
+                                                <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo CSRF_TOKEN; ?>">
+                                                <input type="hidden" name="platform" value="<?php echo $mp["platform"]; ?>">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary" title="Publish ke <?php echo $mp["platform_name"]; ?>" style="border-radius: 6px;">
+                                                    <i class="bi bi-upload"></i>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($multiPlatforms)): ?>
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        <i class="bi bi-info-circle me-1"></i> Belum ada platform target. Edit planning untuk menambahkan platform.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     
     <div class="col-12 col-lg-4">
         

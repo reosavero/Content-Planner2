@@ -11,8 +11,6 @@ class ActivityLogController extends Controller
 
     public function index(): void
     {
-        $page = max(1, (int)($_GET['page'] ?? 1));
-        $perPage = 50;
         $action = $_GET['action'] ?? '';
         $module = $_GET['module'] ?? '';
         $userId = $_GET['user_id'] ?? '';
@@ -52,9 +50,58 @@ class ActivityLogController extends Controller
             }
         }
 
-        $count = Database::fetchColumn(
-            "SELECT COUNT(*) FROM activity_logs al LEFT JOIN users u ON u.id = al.user_id WHERE {$where}", $params
+        // Polling AJAX: hanya ambil log baru setelah id terakhir yang sudah tampil
+        $afterId = (int)($_GET['after_id'] ?? 0);
+        if ($this->isAjax() && $afterId > 0) {
+            $where .= " AND al.id > ?";
+            $params[] = $afterId;
+
+            $newLogs = Database::fetchAll(
+                "SELECT al.*, u.name as user_name, u.avatar as user_avatar, r.name as role_name
+                 FROM activity_logs al
+                 LEFT JOIN users u ON u.id = al.user_id
+                 LEFT JOIN roles r ON r.id = al.role_id
+                 WHERE {$where}
+                 ORDER BY al.created_at DESC, al.id DESC
+                 LIMIT 100",
+                $params
+            );
+
+            ob_start();
+            $this->viewPartial('activity-logs/_rows', ['data' => $newLogs, 'search_q' => '', 'rows_only' => true]);
+            $rowsHtml = ob_get_clean();
+
+            $maxId = 0;
+            foreach ($newLogs as $log) {
+                if ((int)$log['id'] > $maxId) $maxId = (int)$log['id'];
+            }
+
+            $this->success([
+                'rows_html' => $rowsHtml,
+                'has_new' => !empty($newLogs),
+                'count' => count($newLogs),
+                'max_id' => $maxId,
+            ]);
+            return;
+        }
+
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 25;
+
+        $totalCount = (int)Database::fetchColumn(
+            "SELECT COUNT(*)
+             FROM activity_logs al
+             LEFT JOIN users u ON u.id = al.user_id
+             LEFT JOIN roles r ON r.id = al.role_id
+             WHERE {$where}",
+            $params
         );
+
+        $totalPages = max(1, (int)ceil($totalCount / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+        $offset = ($page - 1) * $perPage;
 
         $data = Database::fetchAll(
             "SELECT al.*, u.name as user_name, u.avatar as user_avatar, r.name as role_name
@@ -62,8 +109,8 @@ class ActivityLogController extends Controller
              LEFT JOIN users u ON u.id = al.user_id
              LEFT JOIN roles r ON r.id = al.role_id
              WHERE {$where}
-             ORDER BY al.created_at DESC
-             LIMIT {$perPage} OFFSET " . (($page - 1) * $perPage),
+             ORDER BY al.created_at DESC, al.id DESC
+             LIMIT {$perPage} OFFSET {$offset}",
             $params
         );
 
@@ -72,13 +119,17 @@ class ActivityLogController extends Controller
         $actions = Database::fetchAll("SELECT DISTINCT action FROM activity_logs ORDER BY action");
         $users = Database::fetchAll("SELECT id, name FROM users WHERE deleted_at IS NULL ORDER BY name");
 
+        $latestLogId = (int)Database::fetchColumn("SELECT COALESCE(MAX(id), 0) FROM activity_logs");
+
         $this->view('activity-logs/index', [
             'title' => 'Log Aktivitas',
             'data' => $data,
+            'latest_log_id' => $latestLogId,
             'pagination' => [
                 'current_page' => $page,
-                'total_pages' => max(1, ceil($count / $perPage)),
-                'total' => $count,
+                'total_pages' => $totalPages,
+                'total_records' => $totalCount,
+                'per_page' => $perPage,
             ],
             'filters' => [
                 'action' => $action,
@@ -94,10 +145,6 @@ class ActivityLogController extends Controller
             'breadcrumbs' => [
                 ['label' => 'Pengaturan', 'url' => '#'],
                 ['label' => 'Log Aktivitas', 'url' => '#'],
-            ],
-            'pageActions' => [
-                ['label' => 'Export Log', 'icon' => 'bi-download', 'variant' => 'outline', 'onclick' => "alert('Export feature coming soon')"],
-                ['label' => 'Refresh', 'icon' => 'bi-arrow-clockwise', 'variant' => 'outline', 'onclick' => "location.reload()"],
             ],
         ]);
     }

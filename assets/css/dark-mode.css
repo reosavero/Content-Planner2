@@ -1,0 +1,584 @@
+/* ==========================================================================
+   DARK MODE OVERRIDES
+   Lapisan kompatibilitas tema gelap. Dimuat setelah tvri-theme.css.
+   Hanya aktif saat <html data-theme="dark">.
+   ========================================================================== */
+
+/* ---------- 1. Kartu / container yang hardcode putih ---------- */
+
+/* Tombol Logout di sidebar -> tint merah gelap */
+[data-theme="dark"] .sidebar-logout-btn {
+    background: rgba(217, 45, 45, 0.16) !important;
+    border-color: rgba(217, 45, 45, 0.4) !important;
+    color: #fca5a5 !important;
+}
+[data-theme="dark"] .sidebar-logout-btn:hover {
+    background: rgba(217, 45, 45, 0.28) !important;
+    border-color: var(--danger) !important;
+    color: #fecaca !important;
+}
+[data-theme="dark"] .sidebar-logout-btn i {
+    color: inherit !important;
+}
+
+[data-theme="dark"] .month-card,
+[data-theme="dark"] .task-card-dash,
+[data-theme="dark"] .task-card-approval,
+[data-theme="dark"] .scheduler-card,
+[data-theme="dark"] .multi-format-container {
+    background: var(--surface-secondary) !important;
+    border-color: var(--border) !important;
+}
+
+[data-theme="dark"] .month-card .month-name {
+    color: var(--text-primary) !important;
+}
+[data-theme="dark"] .month-card .month-count {
+    color: var(--text-secondary) !important;
+    background: var(--surface-hover) !important;
+}
+[data-theme="dark"] .month-card:hover {
+    border-color: #4d7cff !important;
+}
+
+[data-theme="dark"] .task-card-approval.is-approved,
+[data-theme="dark"] .approval-task-card.is-approved {
+    background: rgba(16, 185, 129, 0.1) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+}
+[data-theme="dark"] .task-card-approval.is-pending,
+[data-theme="dark"] .approval-task-card.is-pending {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+}
+[data-theme="dark"] .task-card-approval.is-revision,
+[data-theme="dark"] .approval-task-card.is-revision,
+[data-theme="dark"] .approval-task-card.is-belum {
+    background: rgba(220, 38, 38, 0.12) !important;
+    border-color: rgba(220, 38, 38, 0.35) !important;
+}
+[data-theme="dark"] .approval-task-card.is-approved:hover,
+[data-theme="dark"] .approval-task-card.is-pending:hover,
+[data-theme="dark"] .approval-task-card.is-revision:hover,
+[data-theme="dark"] .approval-task-card.is-belum:hover {
+    border-color: inherit !important;
+}
+
+/* ---------- 2. Hover kartu ---------- */
+[data-theme="dark"] .task-card-dash:hover,
+[data-theme="dark"] .task-card-approval:hover,
+[data-theme="dark"] .approval-task-card:hover {
+    border-color: var(--border) !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* ---------- 3. Modal (halaman scheduler/timeline punya aturan sendiri) ---------- */
+[data-theme="dark"] .modal-content {
+    background: var(--surface-secondary) !important;
+    color: var(--text-primary);
+}
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+    background: var(--surface-secondary) !important;
+    border-color: var(--border) !important;
+}
+
+/* ---------- 3b. Tombol silang (X) modal ---------- */
+[data-theme="dark"] .modal-close-btn {
+    background: var(--surface-hover) !important;
+    color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .modal-close-btn:hover {
+    background: rgba(220, 38, 38, 0.25) !important;
+    color: #f87171 !important;
+}
+
+/* ---------- 4. Form & input yang hardcode di halaman ---------- */
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea,
+[data-theme="dark"] .search-input-wrapper input {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ---------- 5. Judul & meta kartu ---------- */
+[data-theme="dark"] .task-card-dash .task-title,
+[data-theme="dark"] .task-card-approval .task-title,
+[data-theme="dark"] .approval-task-card .task-title,
+[data-theme="dark"] .archive-task-card .task-title,
+[data-theme="dark"] .approval-card-title {
+    color: var(--text-primary) !important;
+}
+[data-theme="dark"] .task-card-dash .task-meta,
+[data-theme="dark"] .task-card-approval .task-meta,
+[data-theme="dark"] .approval-task-card .task-meta,
+[data-theme="dark"] .approval-card-sub {
+    color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .approval-card-bottom {
+    color: var(--text-secondary) !important;
+    border-top-color: var(--border) !important;
+}
+[data-theme="dark"] .approval-date-header .task-count {
+    color: var(--text-secondary) !important;
+}
+
+/* ---------- 6. Badge status pastel -> tint gelap ---------- */
+[data-theme="dark"] .approval-badge-status.pending,
+[data-theme="dark"] .badge-status.pending,
+[data-theme="dark"] .magang-badge-status.pending,
+[data-theme="dark"] .priority-badge.high {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+}
+[data-theme="dark"] .approval-badge-status.revision,
+[data-theme="dark"] .badge-status.revision,
+[data-theme="dark"] .priority-badge.urgent {
+    background: rgba(220, 38, 38, 0.15) !important;
+    color: #f87171 !important;
+    border-color: rgba(220, 38, 38, 0.35) !important;
+}
+[data-theme="dark"] .approval-badge-status.approved,
+[data-theme="dark"] .badge-status.approved,
+[data-theme="dark"] .badge-status.selesai,
+[data-theme="dark"] .magang-badge-status.approved {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+}
+[data-theme="dark"] .badge-status.assigned {
+    background: rgba(59, 130, 246, 0.15) !important;
+    color: #93c5fd !important;
+    border-color: rgba(59, 130, 246, 0.35) !important;
+}
+[data-theme="dark"] .badge-status.progress {
+    background: rgba(139, 92, 246, 0.15) !important;
+    color: #c4b5fd !important;
+    border-color: rgba(139, 92, 246, 0.35) !important;
+}
+[data-theme="dark"] .archive-task-card .task-status-badge.status-approved {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+[data-theme="dark"] .archive-task-card .task-status-badge.status-selesai {
+    background: rgba(16, 185, 129, 0.12) !important;
+    color: #6ee7b7 !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+[data-theme="dark"] .archive-task-card .task-status-badge.status-other {
+    background: var(--surface-hover) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .magang-badge.assigned {
+    background: rgba(59, 130, 246, 0.15) !important;
+    color: #93c5fd !important;
+}
+
+/* Tombol link material/edit/file (pastel) */
+[data-theme="dark"] .btn-task-link.material {
+    background: rgba(59, 130, 246, 0.15) !important;
+    color: #93c5fd !important;
+    border-color: rgba(59, 130, 246, 0.35) !important;
+}
+[data-theme="dark"] .btn-task-link.material:hover {
+    background: rgba(59, 130, 246, 0.25) !important;
+    color: #bfdbfe !important;
+}
+[data-theme="dark"] .btn-task-link.edit {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #6ee7b7 !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+}
+[data-theme="dark"] .btn-task-link.edit:hover {
+    background: rgba(16, 185, 129, 0.25) !important;
+    color: #a7f3d0 !important;
+}
+[data-theme="dark"] .btn-task-link.file {
+    background: rgba(139, 92, 246, 0.15) !important;
+    color: #c4b5fd !important;
+    border-color: rgba(139, 92, 246, 0.35) !important;
+}
+[data-theme="dark"] .btn-task-link.file:hover {
+    background: rgba(139, 92, 246, 0.25) !important;
+    color: #ddd6fe !important;
+}
+
+/* Badge lainnya */
+[data-theme="dark"] .priority-badge.medium {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+[data-theme="dark"] .priority-badge.low {
+    background: var(--surface-hover) !important;
+    color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .magang-badge.progress {
+    background: rgba(139, 92, 246, 0.15) !important;
+    color: #c4b5fd !important;
+}
+[data-theme="dark"] .magang-badge.pending {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+}
+[data-theme="dark"] .magang-badge.approved {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+[data-theme="dark"] .magang-badge.revision {
+    background: rgba(220, 38, 38, 0.15) !important;
+    color: #f87171 !important;
+}
+[data-theme="dark"] .magang-badge.neutral {
+    background: var(--surface-hover) !important;
+    color: var(--text-secondary) !important;
+}
+
+/* Panel revisi (versi class) */
+[data-theme="dark"] .revision-panel {
+    background: rgba(220, 38, 38, 0.12) !important;
+    border-color: rgba(220, 38, 38, 0.3) !important;
+}
+
+/* Halaman archive */
+[data-theme="dark"] .archive-day-header .day-info {
+    color: var(--text-primary) !important;
+}
+[data-theme="dark"] #archiveModal .review-section {
+    background: var(--surface-tertiary) !important;
+}
+[data-theme="dark"] #archiveModal .review-section-title {
+    color: var(--text-primary) !important;
+}
+[data-theme="dark"] #archiveModal .review-field-value {
+    color: var(--text-primary) !important;
+}
+[data-theme="dark"] .back-btn:not(.header-back) {
+    background: var(--surface-hover) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .back-btn:not(.header-back):hover {
+    background: var(--surface-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+[data-theme="dark"] .back-btn.header-back {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+}
+[data-theme="dark"] .back-btn.header-back:hover {
+    background: rgba(255, 255, 255, 0.35) !important;
+    color: #ffffff !important;
+}
+[data-theme="dark"] .archive-task-card .task-meta .assignee {
+    color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .archive-task-card .task-status-badge.status-other {
+    background: var(--surface-hover) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .btn-task-link {
+    background: var(--surface-hover) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .btn-task-link:hover {
+    background: var(--surface-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border) !important;
+}
+
+/* ---------- 7. Ranking populer ---------- */
+[data-theme="dark"] .popular-post-rank-2 {
+    background: linear-gradient(135deg, #334155, #475569) !important;
+}
+
+/* ---------- 7b. Error box & step number ---------- */
+[data-theme="dark"] .error-box {
+    background: rgba(220, 38, 38, 0.12) !important;
+    color: #fca5a5 !important;
+}
+[data-theme="dark"] #addAdminModal .step-number {
+    background: var(--surface-hover) !important;
+    color: var(--text-secondary) !important;
+}
+[data-theme="dark"] #addAdminModal .step-label {
+    color: var(--text-secondary) !important;
+}
+[data-theme="dark"] #addAdminModal .step-item.active .step-label {
+    color: #93c5fd !important;
+}
+[data-theme="dark"] #addAdminModal .step-line {
+    background: var(--border) !important;
+}
+[data-theme="dark"] #addAdminModal .step-line.active {
+    background: #4d7cff !important;
+}
+[data-theme="dark"] [style*="#fffdf7"] {
+    background: rgba(245, 158, 11, 0.08) !important;
+}
+
+/* Step indicator generik (halaman auth & interns) */
+[data-theme="dark"] .step-number {
+    background: var(--surface-hover) !important;
+    color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .step-label {
+    color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .step-item.active .step-label {
+    color: #93c5fd !important;
+}
+[data-theme="dark"] .step-line {
+    background: var(--border) !important;
+}
+[data-theme="dark"] .step-line.active {
+    background: #4d7cff !important;
+}
+
+/* Input translusen putih (halaman planning) */
+[data-theme="dark"] [style*="rgba(255,255,255,0.95)"] {
+    background: rgba(26, 29, 38, 0.95) !important;
+}
+
+/* ---------- 8. Tombol sekunder (halaman auth) ---------- */
+[data-theme="dark"] .btn-secondary {
+    background-color: var(--surface-hover) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .btn-secondary:hover {
+    background-color: var(--surface-hover) !important;
+    filter: brightness(1.2);
+}
+
+/* ==========================================================================
+   9. INLINE STYLE (HTML statis & HTML hasil generate JS)
+   Atribut selector menyamai substring style="", cukup untuk menimpa
+   inline style yang hardcode warna terang.
+   ========================================================================== */
+
+/* Teks gelap -> terang */
+[data-theme="dark"] [style*="color:#0f172a"],
+[data-theme="dark"] [style*="color:#1e293b"],
+[data-theme="dark"] [style*="color:#334155"],
+[data-theme="dark"] [style*="color: #0f172a"],
+[data-theme="dark"] [style*="color: #1e293b"] {
+    color: var(--text-primary) !important;
+}
+
+/* Teks abu-abu -> secondary */
+[data-theme="dark"] [style*="color:#475569"],
+[data-theme="dark"] [style*="color:#64748b"],
+[data-theme="dark"] [style*="color:#757575"],
+[data-theme="dark"] [style*="color: #475569"],
+[data-theme="dark"] [style*="color: #64748b"] {
+    color: var(--text-secondary) !important;
+}
+
+/* Teks merah/oranye tua -> merah terang */
+[data-theme="dark"] [style*="color:#c53030"],
+[data-theme="dark"] [style*="color:#9b2c2c"],
+[data-theme="dark"] [style*="color:#b91c1c"],
+[data-theme="dark"] [style*="color:#c62828"],
+[data-theme="dark"] [style*="color:#991b1b"],
+[data-theme="dark"] [style*="color:#e65100"] {
+    color: #f87171 !important;
+}
+
+/* Teks amber/coklat tua -> amber terang */
+[data-theme="dark"] [style*="color:#713f12"],
+[data-theme="dark"] [style*="color:#b45309"],
+[data-theme="dark"] [style*="color:#92400e"],
+[data-theme="dark"] [style*="color:#c2410c"] {
+    color: #fbbf24 !important;
+}
+
+/* Teks navy -> indigo terang */
+[data-theme="dark"] [style*="color:#1a237e"] {
+    color: #a5b4fc !important;
+}
+
+/* Latar netral terang -> surface */
+[data-theme="dark"] [style*="background:#f8fafc"],
+[data-theme="dark"] [style*="background:#f1f5f9"],
+[data-theme="dark"] [style*="background:#fafcfb"],
+[data-theme="dark"] [style*="background:#e2e8f0"],
+[data-theme="dark"] [style*="background: #f8fafc"],
+[data-theme="dark"] [style*="background: #f1f5f9"],
+[data-theme="dark"] [style*="background: #ffffff"] {
+    background: var(--surface-secondary) !important;
+}
+
+/* Latar merah muda -> tint merah */
+[data-theme="dark"] [style*="background:#fff5f5"],
+[data-theme="dark"] [style*="background:#ffebee"],
+[data-theme="dark"] [style*="background:#fef2f2"] {
+    background: rgba(220, 38, 38, 0.14) !important;
+}
+
+/* Latar oranye/amber muda -> tint amber */
+[data-theme="dark"] [style*="background:#fff3e0"],
+[data-theme="dark"] [style*="background:#ffedd5"],
+[data-theme="dark"] [style*="background:#fffbeb"],
+[data-theme="dark"] [style*="background:#fef3c7"] {
+    background: rgba(245, 158, 11, 0.14) !important;
+}
+
+/* Kotak Informasi Schedule / Upload (Tanggal, Jam, Dikirim, Disetujui) -> samakan dengan kartu Dikirim */
+[data-theme="dark"] .schedule-info-row .col-6 > div {
+    background: var(--surface-secondary) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .schedule-info-row .col-6 > div span,
+[data-theme="dark"] .schedule-info-row .col-6 > div strong {
+    color: var(--text-secondary) !important;
+}
+
+/* Kotak highlight biru/hijau muda di modal detail (Deskripsi Update, dsb) */
+[data-theme="dark"] [style*="background:#eff6ff"] {
+    background: rgba(59, 130, 246, 0.14) !important;
+}
+[data-theme="dark"] [style*="background:#f0fdf4"],
+[data-theme="dark"] [style*="background:#ecfdf5"] {
+    background: rgba(16, 185, 129, 0.14) !important;
+}
+[data-theme="dark"] [style*="color:#14532d"],
+[data-theme="dark"] [style*="color:#15803d"],
+[data-theme="dark"] [style*="color:#166534"] {
+    color: #86efac !important;
+}
+
+/* Latar indigo muda (tag konten) -> tint indigo */
+[data-theme="dark"] [style*="background:#e8eaf6"] {
+    background: rgba(63, 81, 181, 0.25) !important;
+}
+
+/* Border terang -> border gelap (style dashed/solid tetap dipertahankan) */
+[data-theme="dark"] [style*="#e2e8f0"],
+[data-theme="dark"] [style*="#cbd5e1"],
+[data-theme="dark"] [style*="#d0d9e8"] {
+    border-color: var(--border) !important;
+}
+
+/* Border merah muda -> tint merah */
+[data-theme="dark"] [style*="#fed7d7"],
+[data-theme="dark"] [style*="#fecaca"] {
+    border-color: rgba(220, 38, 38, 0.35) !important;
+}
+
+/* Border aksen navy kiri (kotak catatan) -> biru terang */
+[data-theme="dark"] [style*="border-left:4px solid #1a237e"],
+[data-theme="dark"] [style*="border-left: 4px solid #1a237e"] {
+    border-left-color: #60a5fa !important;
+}
+
+/* ---------- Popup notifikasi ---------- */
+[data-theme="dark"] .topbar-notif-dropdown {
+    background: var(--surface) !important;
+}
+[data-theme="dark"] .topbar-notif-list {
+    background: transparent !important;
+}
+[data-theme="dark"] .topbar-notif-header {
+    background: linear-gradient(180deg, rgba(77, 124, 255, 0.08), rgba(77, 124, 255, 0)) !important;
+}
+[data-theme="dark"] .notif-header-icon {
+    background: #2f54eb !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+[data-theme="dark"] .topbar-notif-count-badge {
+    background: #4d7cff !important;
+}
+[data-theme="dark"] .notif-group {
+    background: transparent !important;
+}
+[data-theme="dark"] .notif-group-header {
+    background: var(--surface-tertiary) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .notif-group-items {
+    background: transparent !important;
+}
+[data-theme="dark"] .notif-item {
+    background: var(--surface-secondary) !important;
+    border-color: var(--border) !important;
+}
+[data-theme="dark"] .notif-item:hover {
+    background: var(--surface-hover) !important;
+    border-color: var(--border-light) !important;
+}
+[data-theme="dark"] .notif-item.is-unread {
+    background: rgba(77, 124, 255, 0.1) !important;
+    border-color: rgba(77, 124, 255, 0.2) !important;
+}
+[data-theme="dark"] .notif-item.is-unread::before {
+    background: #4d7cff !important;
+}
+[data-theme="dark"] .notif-item-icon.type-info {
+    background: rgba(77, 124, 255, 0.15) !important;
+    color: #93c5fd !important;
+}
+[data-theme="dark"] .notif-item-icon.type-success {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+[data-theme="dark"] .notif-item-icon.type-warning {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+}
+[data-theme="dark"] .notif-item-icon.type-error {
+    background: rgba(220, 38, 38, 0.15) !important;
+    color: #f87171 !important;
+}
+[data-theme="dark"] .topbar-notif-footer a {
+    color: #93c5fd !important;
+}
+[data-theme="dark"] .topbar-notif-footer a:hover {
+    background: rgba(77, 124, 255, 0.12) !important;
+}
+
+/* ---------- 10. Planning Header & Search Box (Dark Mode Overrides) ---------- */
+[data-theme="dark"] .timeline-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    border: 1px solid var(--border, #334155) !important;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.45) !important;
+}
+[data-theme="dark"] .planning-search-field,
+[data-theme="dark"] #planningSearchInput {
+    background: var(--surface-secondary, #1e293b) !important;
+    border: 1px solid var(--border, #334155) !important;
+    color: var(--text-primary, #f8fafc) !important;
+}
+[data-theme="dark"] .planning-search-field::placeholder,
+[data-theme="dark"] #planningSearchInput::placeholder {
+    color: var(--text-tertiary, #94a3b8) !important;
+    opacity: 1 !important;
+}
+[data-theme="dark"] .planning-search-field:focus,
+[data-theme="dark"] #planningSearchInput:focus {
+    background: var(--surface, #0f172a) !important;
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
+}
+[data-theme="dark"] .planning-search-box .search-icon,
+[data-theme="dark"] .timeline-header .bi-search {
+    color: var(--text-tertiary, #94a3b8) !important;
+}
+[data-theme="dark"] .timeline-header .stat-item {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+[data-theme="dark"] .timeline-header .stat-item:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+[data-theme="dark"] .timeline-header .stat-item.active-filter {
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+}

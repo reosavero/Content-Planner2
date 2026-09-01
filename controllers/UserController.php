@@ -98,6 +98,12 @@ class UserController extends Controller
             ]
         );
 
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'create', 'users', 'users', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), (int)Database::getInstance()->lastInsertId(), 'User baru ditambahkan: ' . $data['name'] . ' (' . $data['email'] . ')', $_SERVER['REMOTE_ADDR']]
+        );
+
         $this->redirectWith('/users', 'success', 'User berhasil ditambahkan.');
     }
 
@@ -145,6 +151,11 @@ class UserController extends Controller
         }
 
         Database::execute($sql, $params);
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'update', 'users', 'users', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), (int)$id, 'User "' . $user['name'] . '" diperbarui', $_SERVER['REMOTE_ADDR']]
+        );
         $this->redirectWith('/users', 'success', 'User berhasil diupdate.');
     }
 
@@ -175,27 +186,64 @@ class UserController extends Controller
 
         $currentUserId = Session::get('user_id');
 
-        
-        Database::execute("UPDATE planning_konten SET created_by = ? WHERE created_by = ?", [$currentUserId, $id]);
-        Database::execute("UPDATE planning_konten SET pic_id = NULL WHERE pic_id = ?", [$id]);
-        Database::execute("UPDATE planning_konten SET editor_id = NULL WHERE editor_id = ?", [$id]);
-        Database::execute("UPDATE planning_konten SET approved_by = NULL WHERE approved_by = ?", [$id]);
+        try {
+            $safeExecute = function (string $sql, array $params = []): void {
+                try {
+                    Database::execute($sql, $params);
+                } catch (\Throwable $e) {
+                    // Ignore if table or column doesn't exist in database
+                }
+            };
 
-        
-        Database::execute("DELETE FROM activity_logs WHERE user_id = ?", [$id]);
-        Database::execute("DELETE FROM notifications WHERE user_id = ?", [$id]);
-        Database::execute("DELETE FROM platform_accounts WHERE user_id = ?", [$id]);
+            
+            $safeExecute("UPDATE planning_konten SET created_by = ? WHERE created_by = ?", [$currentUserId, $id]);
+            $safeExecute("UPDATE planning_konten SET pic_id = NULL WHERE pic_id = ?", [$id]);
+            $safeExecute("UPDATE planning_konten SET editor_id = NULL WHERE editor_id = ?", [$id]);
+            $safeExecute("UPDATE planning_konten SET approved_by = NULL WHERE approved_by = ?", [$id]);
+            $safeExecute("UPDATE planning_konten SET rechecked_by = NULL WHERE rechecked_by = ?", [$id]);
 
-        
-        Database::execute("DELETE FROM users WHERE id = ?", [$id]);
+            
+            $safeExecute("UPDATE recheck_logs SET approved_by = NULL WHERE approved_by = ?", [$id]);
+            $safeExecute("UPDATE backup_logs SET performed_by = NULL WHERE performed_by = ?", [$id]);
+            $safeExecute("UPDATE posting_logs SET performed_by = NULL WHERE performed_by = ?", [$id]);
+            $safeExecute("UPDATE lokasi_shooting SET created_by = NULL WHERE created_by = ?", [$id]);
+            $safeExecute("UPDATE lokasi_shooting SET updated_by = NULL WHERE updated_by = ?", [$id]);
+            $safeExecute("UPDATE calendar_notes SET created_by = NULL WHERE created_by = ?", [$id]);
 
-        $msg = 'User "' . htmlspecialchars($user['name']) . '" berhasil dihapus dari database.';
-        Session::setFlash('success', $msg);
+            
+            $safeExecute("DELETE FROM activity_logs WHERE user_id = ?", [$id]);
+            $safeExecute("DELETE FROM notifications WHERE user_id = ?", [$id]);
+            $safeExecute("DELETE FROM notifications WHERE pegawai_id = ?", [$id]);
+            $safeExecute("DELETE FROM platform_akun WHERE user_id = ?", [$id]);
+            $safeExecute("DELETE FROM platform_accounts WHERE user_id = ?", [$id]);
+            $safeExecute("DELETE FROM user_sessions WHERE user_id = ?", [$id]);
 
-        if ($this->isAjax()) {
-            $this->json(['success' => true, 'message' => $msg]);
-        } else {
-            $this->redirectWith('/users', 'success', $msg);
+            
+            $safeExecute(
+                "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+                 VALUES (?, ?, 'delete', 'users', 'users', ?, ?, ?)",
+                [$currentUserId, Session::get('user_role_id'), (int)$id, 'User "' . $user['name'] . '" dihapus dari database', $_SERVER['REMOTE_ADDR']]
+            );
+
+            
+            Database::execute("DELETE FROM users WHERE id = ?", [$id]);
+
+            $msg = 'User "' . htmlspecialchars($user['name']) . '" berhasil dihapus dari database.';
+            Session::setFlash('success', $msg);
+
+            if ($this->isAjax()) {
+                $this->json(['success' => true, 'message' => $msg]);
+            } else {
+                $this->redirectWith('/users', 'success', $msg);
+            }
+        } catch (\Throwable $e) {
+            error_log('Gagal hapus user: ' . $e->getMessage());
+            $errorMsg = 'Gagal menghapus user: ' . $e->getMessage();
+            if ($this->isAjax()) {
+                $this->json(['success' => false, 'message' => $errorMsg], 500);
+            } else {
+                $this->redirectWith('/users', 'error', $errorMsg);
+            }
         }
     }
 
@@ -212,6 +260,11 @@ class UserController extends Controller
 
         $newStatus = $user['is_active'] ? 0 : 1;
         Database::execute("UPDATE users SET is_active = ?, updated_at = NOW() WHERE id = ?", [$newStatus, $id]);
+        Database::execute(
+            "INSERT INTO activity_logs (user_id, role_id, action, module, table_name, record_id, description, ip_address)
+             VALUES (?, ?, 'update', 'users', 'users', ?, ?, ?)",
+            [Session::get('user_id'), Session::get('user_role_id'), (int)$id, 'User "' . $user['name'] . '" ' . ($newStatus ? 'diaktifkan' : 'dinonaktifkan'), $_SERVER['REMOTE_ADDR']]
+        );
 
         $this->json([
             'success' => true,
