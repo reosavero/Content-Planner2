@@ -84,6 +84,24 @@ $kategoris = $kategoris ?? [];
     .task-card.fade-up-filter {
         animation: fadeUp 0.4s ease-out both;
     }
+
+    /* Animasi reveal saat scroll (soft & smooth seperti halaman integrasi sosmed) */
+    .anim-fade-up {
+        opacity: 0;
+        transform: translateY(16px);
+        transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+        will-change: opacity, transform;
+    }
+    .anim-fade-up.in-view {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    @media (max-width: 767px) {
+        .anim-fade-up {
+            transform: translateY(10px);
+            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    }
     .timeline-header::after {
         content: '';
         position: absolute;
@@ -581,7 +599,24 @@ $kategoris = $kategoris ?? [];
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
-        position: relative;
+        position: relative !important;
+    }
+
+    .input-group-date .flatpickr-wrapper {
+        display: flex !important;
+        flex: 1 1 0% !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        position: relative !important;
+    }
+
+    .calendar-group-open,
+    .form-group:has(.input-group-date.calendar-open),
+    .col-12:has(.input-group-date.calendar-open),
+    .col-md-6:has(.input-group-date.calendar-open),
+    .p-3:has(.input-group-date.calendar-open) {
+        position: relative !important;
+        z-index: 9999 !important;
     }
 
     .input-group-date input[type="hidden"],
@@ -596,11 +631,37 @@ $kategoris = $kategoris ?? [];
     }
 
     .input-group-date.calendar-open {
-        overflow: visible !important;
+        z-index: 99999 !important;
+        position: relative !important;
     }
 
-    .flatpickr-calendar {
+    .flatpickr-calendar.static,
+    .input-group-date .flatpickr-calendar {
+        position: absolute !important;
+        top: calc(100% + 4px) !important;
+        left: 0 !important;
+        right: auto !important;
+        transform: none !important;
+        max-width: calc(100vw - 32px) !important;
         z-index: 99999 !important;
+    }
+
+    @media (max-width: 360px) {
+        .flatpickr-calendar.static,
+        .input-group-date .flatpickr-calendar {
+            width: 280px !important;
+        }
+        .flatpickr-calendar .flatpickr-days,
+        .flatpickr-calendar .dayContainer {
+            width: 280px !important;
+            min-width: 280px !important;
+            max-width: 280px !important;
+        }
+        .flatpickr-calendar .flatpickr-day {
+            max-width: 38px !important;
+            height: 34px !important;
+            line-height: 34px !important;
+        }
     }
     .input-group-date .form-control,
     .input-group-date input.flatpickr-input,
@@ -887,7 +948,7 @@ $kategoris = $kategoris ?? [];
     ?>
 
 
-    <div class="timeline-header">
+    <div class="timeline-header anim-fade-up">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; width: 100%;">
             <div>
                 <h3 style="margin: 0; font-size: 22px; font-weight: 700; color: #fff;">Timeline Konten Harian</h3>
@@ -901,15 +962,15 @@ $kategoris = $kategoris ?? [];
                 $prevDisabled = ($minKeyNum !== null && $prevKeyNum < $minKeyNum);
                 ?>
                 <?php if ($prevDisabled): ?>
-                <span class="month-nav-icon" title="Bulan <?= $monthNames[$prevMonth] ?> <?= $prevYear ?> sudah masuk archive (maksimal bisa akses <?= $monthNames[(int)$minMonth] ?> <?= $minYear ?>)" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; cursor: not-allowed; opacity: 0.5;">
+                <span class="month-nav-icon" aria-label="Bulan <?= $monthNames[$prevMonth] ?> <?= $prevYear ?> sudah masuk archive" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; cursor: not-allowed; opacity: 0.5;">
                     <i class="bi bi-chevron-left" style="font-size: 15px;"></i>
                 </span>
                 <?php else: ?>
-                <a href="?view=timeline&bulan=<?= $prevMonth ?>&tahun=<?= $prevYear ?>" class="month-nav-icon" title="Bulan Sebelumnya (<?= $monthNames[$prevMonth] ?> <?= $prevYear ?>)" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease; backdrop-filter: blur(8px); flex-shrink: 0;">
+                <a data-href="?view=timeline&bulan=<?= $prevMonth ?>&tahun=<?= $prevYear ?>" class="month-nav-icon" aria-label="Bulan Sebelumnya" onclick="window.location.href=this.getAttribute('data-href')" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease; backdrop-filter: blur(8px); flex-shrink: 0; cursor: pointer;">
                     <i class="bi bi-chevron-left" style="font-size: 15px;"></i>
                 </a>
                 <?php endif; ?>
-                <a href="?view=timeline&bulan=<?= $nextMonth ?>&tahun=<?= $nextYear ?>" class="month-nav-icon" title="Bulan Berikutnya (<?= $monthNames[$nextMonth] ?> <?= $nextYear ?>)" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease; backdrop-filter: blur(8px); flex-shrink: 0;">
+                <a data-href="?view=timeline&bulan=<?= $nextMonth ?>&tahun=<?= $nextYear ?>" class="month-nav-icon" aria-label="Bulan Berikutnya" onclick="window.location.href=this.getAttribute('data-href')" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.2s ease; backdrop-filter: blur(8px); flex-shrink: 0; cursor: pointer;">
                     <i class="bi bi-chevron-right" style="font-size: 15px;"></i>
                 </a>
 
@@ -923,27 +984,27 @@ $kategoris = $kategoris ?? [];
             </div>
         </div>
         <div class="stats">
-            <div class="stat-item" onclick="filterByStatus('all')" title="Tampilkan semua task">
+            <div class="stat-item anim-fade-up" onclick="filterByStatus('all')" title="Tampilkan semua task">
                 <div class="number"><?= $stats['total'] ?></div>
                 <div class="label">Total Task</div>
             </div>
-            <div class="stat-item" onclick="filterByStatus('Selesai','Publish')" title="Klik untuk filter task Selesai">
+            <div class="stat-item anim-fade-up" onclick="filterByStatus('Selesai','Publish')" title="Klik untuk filter task Selesai">
                 <div class="number" style="color: #10b981;"><?= $stats['selesai'] ?></div>
                 <div class="label">Selesai</div>
             </div>
-            <div class="stat-item" onclick="filterByStatus('Scheduled')" title="Klik untuk filter task Schedule">
+            <div class="stat-item anim-fade-up" onclick="filterByStatus('Scheduled')" title="Klik untuk filter task Schedule">
                 <div class="number" style="color: #3b82f6;"><?= $stats['schedule'] ?></div>
                 <div class="label">Schedule</div>
             </div>
-            <div class="stat-item" onclick="filterByStatus('Approved')" title="Klik untuk filter task Approved">
+            <div class="stat-item anim-fade-up" onclick="filterByStatus('Approved')" title="Klik untuk filter task Approved">
                 <div class="number" style="color: #22c55e;"><?= $stats['approved'] ?></div>
                 <div class="label">Approved</div>
             </div>
-            <div class="stat-item" onclick="filterByStatus('Pending Approval')" title="Klik untuk filter task Menunggu Approval">
+            <div class="stat-item anim-fade-up" onclick="filterByStatus('Pending Approval')" title="Klik untuk filter task Menunggu Approval">
                 <div class="number" style="color: #f97316;"><?= $stats['menunggu'] ?></div>
                 <div class="label">Menunggu Approval</div>
             </div>
-            <div class="stat-item" onclick="filterByStatus('Belum','Assigned','In Progress','Proses','Need Revision','Belum Selesai')" title="Klik untuk filter task Belum">
+            <div class="stat-item anim-fade-up" onclick="filterByStatus('Belum','Assigned','In Progress','Proses','Need Revision','Belum Selesai')" title="Klik untuk filter task Belum">
                 <div class="number" style="color: #dc2626;"><?= $stats['belum'] ?></div>
                 <div class="label">Belum</div>
             </div>
@@ -980,7 +1041,7 @@ $kategoris = $kategoris ?? [];
                 continue;
             }
         ?>
-        <div class="date-group">
+        <div class="date-group anim-fade-up">
             <div class="date-header">
                 <span class="date-badge"><?= $dayNum ?></span>
                 <span class="day-name"><?= htmlspecialchars($dayName) ?> (<?= date('d/m/Y', strtotime($date)) ?>)</span>
@@ -1027,7 +1088,7 @@ $kategoris = $kategoris ?? [];
                         default => 'bi-hourglass-split'
                     };
                 ?>
-                <div class="task-card <?= $statusClass ?>" data-id="<?= $task['id'] ?>" data-status="<?= htmlspecialchars($task['status']) ?>" onclick="viewTask(event, <?= $task['id'] ?>)">
+                <div class="task-card anim-fade-up <?= $statusClass ?>" data-id="<?= $task['id'] ?>" data-status="<?= htmlspecialchars($task['status']) ?>" onclick="viewTask(event, <?= $task['id'] ?>)">
 
 
                     <span class="task-status-badge <?= $statusClass ?>"><i class="bi <?= $statusIcon ?>"></i> <?= htmlspecialchars($statusDisplay) ?></span>
@@ -1073,7 +1134,7 @@ $kategoris = $kategoris ?? [];
 
 
                 <?php if ($date >= date('Y-m-d')): ?>
-                <div class="task-card add-task-card" onclick="openModal('modalTask', null, 'create', '<?= $date ?>')">
+                <div class="task-card add-task-card anim-fade-up" onclick="openModal('modalTask', null, 'create', '<?= $date ?>')">
                     <div style="text-align: center; color: var(--tvri-blue);">
                         <i class="bi bi-plus-circle"></i>
                         <span style="font-size: 13px; font-weight: 700;">Tambah Task</span>
@@ -1090,7 +1151,7 @@ $kategoris = $kategoris ?? [];
 
 
 
-    <div class="card mb-4">
+    <div class="card anim-fade-up mb-4">
         <div class="card-body">
             <form method="GET" action="" id="filterForm">
                 <input type="hidden" name="view" value="table">
@@ -1172,7 +1233,7 @@ $kategoris = $kategoris ?? [];
     </div>
 
 
-    <div class="card table-section-card mb-4" style="margin-bottom: 28px;">
+    <div class="card table-section-card anim-fade-up mb-4" style="margin-bottom: 28px;">
         <div class="card-header">
             <h5><i class="bi bi-table text-primary"></i> Master Tabel Planning Konten</h5>
             <div class="d-flex gap-2">
@@ -1301,8 +1362,8 @@ $kategoris = $kategoris ?? [];
 
                                 <div class="multi-format-container" id="multiFormatContainer">
                                     <?php
-                                    $formatOptions = ['Feed', 'Reels', 'Reels Berita', 'Story', 'Thumbnail', 'Flyer/Poster', 'Take Video', 'Skrip / Materi', 'YouTube', 'Image'];
-                                    foreach ($formatOptions as $fmt):
+                                     $formatOptions = !empty($formatTypesList) ? $formatTypesList : ['Feed', 'Reels', 'Reels Berita', 'Story', 'Thumbnail', 'Flyer/Poster', 'Take Video', 'Skrip / Materi', 'YouTube', 'Image'];
+                                     foreach ($formatOptions as $fmt):
                                     ?>
                                         <button type="button" class="format-pill-btn" data-value="<?= htmlspecialchars($fmt) ?>" onclick="toggleFormatPill(this, event)">
                                             <i class="bi bi-plus-lg icon-add"></i>
@@ -1330,10 +1391,14 @@ $kategoris = $kategoris ?? [];
                                 <label style="font-size: 12px; font-weight: 600; color: #334155; display: block; margin-bottom: 4px;">PIC (Penanggung Jawab)</label>
                                 <div class="pic-select-container" style="max-width: 270px; width: 100%;">
                                     <select name="assigned_to" id="taskAssignedToSelect" class="form-control" required style="width: 100%; height: 38px; font-size: 13px;" onchange="var opt=this.options[this.selectedIndex]; document.getElementById('taskPicNameInput').value = opt.getAttribute('data-name') || '';">
-                                        <option value="">-- Pilih User Magang / PIC --</option>
-                                        <?php foreach ($usersList as $u): ?>
-                                            <option value="<?= (int)$u['id'] ?>" data-name="<?= htmlspecialchars($u['name']) ?>"><?= htmlspecialchars($u['name']) ?></option>
-                                        <?php endforeach; ?>
+                                        <option value="">-- Pilih PIC --</option>
+                                         <?php foreach ($usersList as $u): ?>
+                                             <?php
+                                                 $isSelf = ((int)$u['id'] === (int)Session::get('user_id'));
+                                                 $roleLabel = (!$isSelf && !empty($u['role_name'])) ? ' (' . htmlspecialchars($u['role_name']) . ')' : '';
+                                             ?>
+                                             <option value="<?= (int)$u['id'] ?>" data-name="<?= htmlspecialchars($u['name']) ?>"><?= htmlspecialchars($u['name']) . $roleLabel ?></option>
+                                         <?php endforeach; ?>
                                     </select>
                                     <input type="hidden" name="pic_name" id="taskPicNameInput" value="">
                                 </div>
@@ -1568,6 +1633,12 @@ $kategoris = $kategoris ?? [];
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
+    // Animasi tampil saat masuk halaman saja (tanpa animasi ulang saat scrolling)
+    var revealEls = document.querySelectorAll('.anim-fade-up');
+    revealEls.forEach(function(el) {
+        el.classList.add('in-view');
+    });
 
     setTimeout(function() {
         var allCards = document.querySelectorAll('.task-card:not(.add-task-card)');
@@ -1860,7 +1931,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (document.getElementById('taskTitleInput')) document.getElementById('taskTitleInput').value = d.title || '';
                             if (document.getElementById('taskPicNameInput')) document.getElementById('taskPicNameInput').value = d.pic_name || '';
                             if (document.getElementById('taskAssignedToSelect')) {
-                                document.getElementById('taskAssignedToSelect').value = d.assigned_to || '';
+                                var sel = document.getElementById('taskAssignedToSelect');
+                                sel.value = d.assigned_to || '';
+                                if (!sel.value && d.pic_name) {
+                                    for (var i = 0; i < sel.options.length; i++) {
+                                        if (sel.options[i].getAttribute('data-name') === d.pic_name) {
+                                            sel.selectedIndex = i;
+                                            break;
+                                        }
+                                    }
+                                }
                                 syncCustomDropdown('taskAssignedToSelect');
                             }
                             if (document.getElementById('taskSortOrderInput')) document.getElementById('taskSortOrderInput').value = (d.sort_order !== undefined && d.sort_order !== null) ? d.sort_order : 1;
@@ -2269,18 +2349,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function handleCalendarOpen(selectedDates, dateStr, instance) {
             var container = instance.element.closest('.input-group-date');
-            if (container) container.classList.add('calendar-open');
-            var modalBody = instance.element.closest('.modal-body');
-            if (modalBody) {
-                modalBody.style.overflowY = 'visible';
+            if (container) {
+                container.classList.add('calendar-open');
+                var group = container.closest('.form-group, .p-3, .col-12, .col-sm-6, .col-md-6');
+                if (group) group.classList.add('calendar-group-open');
             }
         }
         function handleCalendarClose(selectedDates, dateStr, instance) {
             var container = instance.element.closest('.input-group-date');
-            if (container) container.classList.remove('calendar-open');
-            var modalBody = instance.element.closest('.modal-body');
-            if (modalBody) {
-                modalBody.style.overflowY = '';
+            if (container) {
+                container.classList.remove('calendar-open');
+                var group = container.closest('.form-group, .p-3, .col-12, .col-sm-6, .col-md-6');
+                if (group) group.classList.remove('calendar-group-open');
             }
         }
 
@@ -2295,7 +2375,7 @@ document.addEventListener('DOMContentLoaded', function() {
             clickOpens: false,
             animate: true,
             monthSelectorType: 'static',
-            static: false,
+            static: true,
             position: 'auto',
             onOpen: handleCalendarOpen,
             onClose: handleCalendarClose
